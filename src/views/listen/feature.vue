@@ -714,6 +714,110 @@
             </el-table-column>
           </el-table>
         </el-tab-pane>
+        <el-tab-pane label="macd" name="macd">
+          <div>
+            <el-button type="primary" @click="addMacd">{{ $t('table.add') }}</el-button>
+          </div>
+          <el-table
+            :data="technology.macd"
+            border
+            fit
+            size="mini"
+            highlight-current-row
+            style="margin-top: 10px"
+          >
+            <el-table-column
+              :label="$t('technology.name')"
+              align="center"
+            >
+              <template slot-scope="scope">
+                <el-input
+                  v-model="scope.row.name"
+                  class="edit-input"
+                  size="small"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              :label="$t('technology.klineInterval')"
+              align="center"
+              width="100"
+            >
+              <template slot-scope="scope">
+                <el-select v-model="scope.row.kline_interval" size="small">
+                  <el-option v-for="item in klineInterval" :key="item" :label="item" :value="item" />
+                </el-select>
+              </template>
+            </el-table-column>
+            <el-table-column
+              :label="$t('technology.fast_period')"
+              align="center"
+              width="100"
+            >
+              <template slot-scope="scope">
+                <el-input
+                  v-model="scope.row.fast_period"
+                  class="edit-input"
+                  size="small"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              :label="$t('technology.slow_period')"
+              align="center"
+              width="100"
+            >
+              <template slot-scope="scope">
+                <el-input
+                  v-model="scope.row.slow_period"
+                  class="edit-input"
+                  size="small"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              :label="$t('technology.signal_period')"
+              align="center"
+              width="100"
+            >
+              <template slot-scope="scope">
+                <el-input
+                  v-model="scope.row.signal_period"
+                  class="edit-input"
+                  size="small"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              :label="$t('technology.enable')"
+              align="center"
+              width="100"
+            >
+              <template slot-scope="scope">
+                <el-switch
+                  v-model="scope.row.enable"
+                  active-color="#13ce66"
+                  inactive-color="#dcdfe6"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              :label="$t('table.actions')"
+              align="center"
+              width="100"
+              class-name="small-padding fixed-width"
+            >
+              <template slot-scope="scope">
+                <el-button
+                  type="danger"
+                  size="mini"
+                  @click="delMacd(scope)"
+                >{{ $t('table.delete') }}
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
       </el-tabs>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogTechnologyVisible = false">{{ $t('table.cancel') }}</el-button>
@@ -914,6 +1018,7 @@ const initTechnology = {
   kc: [],
   boll: [],
   atr: [],
+  macd: [],
 }
 
 export default {
@@ -1131,6 +1236,18 @@ export default {
                     keywords.push(`${item.name}.Low[]`)
                     keywords.push(`${item.name}.Mid`)
                     keywords.push(`${item.name}.Mid[]`)
+                    break
+                  case 'macd':
+                    keywords.push(`${item.name}.KlineInterval`)
+                    keywords.push(`${item.name}.FastPeriod`)
+                    keywords.push(`${item.name}.SlowPeriod`)
+                    keywords.push(`${item.name}.SignalPeriod`)
+                    keywords.push(`${item.name}.MACD`)
+                    keywords.push(`${item.name}.MACD[]`)
+                    keywords.push(`${item.name}.Signal`)
+                    keywords.push(`${item.name}.Signal[]`)
+                    keywords.push(`${item.name}.Histogram`)
+                    keywords.push(`${item.name}.Histogram[]`)
                     break
                 }
               }
@@ -1410,6 +1527,15 @@ export default {
             if (item.std_dev_multiplier) {
               item.std_dev_multiplier = Number(item.std_dev_multiplier)
             }
+            if (item.fast_period) {
+              item.fast_period = Number(item.fast_period)
+            }
+            if (item.slow_period) {
+              item.slow_period = Number(item.slow_period)
+            }
+            if (item.signal_period) {
+              item.signal_period = Number(item.signal_period)
+            }
           })
         })
         await setListenCoin(this.technologySymbolId, { technology: JSON.stringify(this.technology) })
@@ -1515,6 +1641,22 @@ export default {
     },
     delAtr(scope) {
       this.technology.atr = this.technology.atr.filter((item, index) => index !== scope.$index)
+    },
+    addMacd() {
+      this.technology.macd = [
+        ...this.technology.macd,
+        {
+          name: '',
+          kline_interval: '',
+          fast_period: 12,
+          slow_period: 26,
+          signal_period: 9,
+          enable: false,
+        },
+      ]
+    },
+    delMacd(scope) {
+      this.technology.macd = this.technology.macd.filter((item, index) => index !== scope.$index)
     },
 
     addStrategy() {
