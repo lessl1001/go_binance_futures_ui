@@ -20,7 +20,7 @@
     <el-table
       v-loading="listLoading"
       :data="list"
-      element-loading-text="Loading"
+      element-loading-text="$t('table.loading')"
       border
       fit
       size="mini"
@@ -162,7 +162,7 @@ export default {
       enableLoading: false,
       dialogFormVisible: false,
       dialogLoading: false,
-      dialogTitle: '新增币种信息',
+      dialogTitle: this.$t('table.addCoinInfo'),
       info: {},
       rowKey(row) {
         return row.symbol

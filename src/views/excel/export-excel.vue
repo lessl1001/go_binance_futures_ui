@@ -13,7 +13,7 @@
       </a>
     </div>
 
-    <el-table v-loading="listLoading" :data="list" element-loading-text="Loading..." border fit highlight-current-row>
+    <el-table v-loading="listLoading" :data="list" element-loading-text="$t('table.loading')" border fit highlight-current-row>
       <el-table-column align="center" label="Id" width="95">
         <template slot-scope="scope">
           {{ scope.$index }}

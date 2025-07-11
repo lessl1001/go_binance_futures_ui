@@ -18,16 +18,16 @@
         Primary
       </el-button>
       <el-button type="success">
-        Success
+        {{ $t('table.success') }}
       </el-button>
       <el-button type="info">
-        Info
+        {{ $t('table.info') }}
       </el-button>
       <el-button type="warning">
-        Warning
+        {{ $t('table.warning') }}
       </el-button>
       <el-button type="danger">
-        Danger
+        {{ $t('table.danger') }}
       </el-button>
     </div>
 
@@ -36,7 +36,7 @@
       <el-button type="primary" icon="el-icon-share" />
       <el-button type="primary" icon="el-icon-delete" />
       <el-button type="primary" icon="el-icon-search">
-        Search
+        {{ $t('table.search') }}
       </el-button>
       <el-button type="primary">
         Upload

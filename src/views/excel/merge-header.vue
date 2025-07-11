@@ -7,7 +7,7 @@
       ref="multipleTable"
       v-loading="listLoading"
       :data="list"
-      element-loading-text="Loading"
+      element-loading-text="$t('table.loading')"
       border
       fit
       highlight-current-row
