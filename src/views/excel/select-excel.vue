@@ -60,7 +60,7 @@ export default {
       listLoading: true,
       multipleSelection: [],
       downloadLoading: false,
-      filename: ''
+      filename: '',
     }
   },
   created() {
@@ -88,7 +88,7 @@ export default {
           excel.export_json_to_excel({
             header: tHeader,
             data,
-            filename: this.filename
+            filename: this.filename,
           })
           this.$refs.multipleTable.clearSelection()
           this.downloadLoading = false
@@ -96,13 +96,13 @@ export default {
       } else {
         this.$message({
           message: 'Please select at least one item',
-          type: 'warning'
+          type: 'warning',
         })
       }
     },
     formatJson(filterVal, jsonData) {
       return jsonData.map(v => filterVal.map(j => v[j]))
-    }
-  }
+    },
+  },
 }
 </script>

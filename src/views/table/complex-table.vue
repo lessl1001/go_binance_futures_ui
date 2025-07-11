@@ -156,7 +156,7 @@ const calendarTypeOptions = [
   { key: 'CN', display_name: 'China' },
   { key: 'US', display_name: 'USA' },
   { key: 'JP', display_name: 'Japan' },
-  { key: 'EU', display_name: 'Eurozone' }
+  { key: 'EU', display_name: 'Eurozone' },
 ]
 
 // arr to obj, such as { CN : "China", US : "USA" }
@@ -174,13 +174,13 @@ export default {
       const statusMap = {
         published: 'success',
         draft: 'info',
-        deleted: 'danger'
+        deleted: 'danger',
       }
       return statusMap[status]
     },
     typeFilter(type) {
       return calendarTypeKeyValue[type]
-    }
+    },
   },
   data() {
     return {
@@ -194,7 +194,7 @@ export default {
         importance: undefined,
         title: undefined,
         type: undefined,
-        sort: '+id'
+        sort: '+id',
       },
       importanceOptions: [1, 2, 3],
       calendarTypeOptions,
@@ -208,22 +208,22 @@ export default {
         timestamp: new Date(),
         title: '',
         type: '',
-        status: 'published'
+        status: 'published',
       },
       dialogFormVisible: false,
       dialogStatus: '',
       textMap: {
         update: 'Edit',
-        create: 'Create'
+        create: 'Create',
       },
       dialogPvVisible: false,
       pvData: [],
       rules: {
         type: [{ required: true, message: 'type is required', trigger: 'change' }],
         timestamp: [{ type: 'date', required: true, message: 'timestamp is required', trigger: 'change' }],
-        title: [{ required: true, message: 'title is required', trigger: 'blur' }]
+        title: [{ required: true, message: 'title is required', trigger: 'blur' }],
       },
-      downloadLoading: false
+      downloadLoading: false,
     }
   },
   created() {
@@ -249,7 +249,7 @@ export default {
     handleModifyStatus(row, status) {
       this.$message({
         message: '操作成功',
-        type: 'success'
+        type: 'success',
       })
       row.status = status
     },
@@ -275,7 +275,7 @@ export default {
         timestamp: new Date(),
         title: '',
         status: 'published',
-        type: ''
+        type: '',
       }
     },
     handleCreate() {
@@ -298,7 +298,7 @@ export default {
               title: '成功',
               message: '创建成功',
               type: 'success',
-              duration: 2000
+              duration: 2000,
             })
           })
         }
@@ -326,7 +326,7 @@ export default {
               title: '成功',
               message: '更新成功',
               type: 'success',
-              duration: 2000
+              duration: 2000,
             })
           })
         }
@@ -337,7 +337,7 @@ export default {
         title: '成功',
         message: '删除成功',
         type: 'success',
-        duration: 2000
+        duration: 2000,
       })
       this.list.splice(index, 1)
     },
@@ -356,7 +356,7 @@ export default {
         excel.export_json_to_excel({
           header: tHeader,
           data,
-          filename: 'table-list'
+          filename: 'table-list',
         })
         this.downloadLoading = false
       })
@@ -373,7 +373,7 @@ export default {
     getSortClass: function(key) {
       const sort = this.listQuery.sort
       return sort === `+${key}` ? 'ascending' : 'descending'
-    }
-  }
+    },
+  },
 }
 </script>

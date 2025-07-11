@@ -15,20 +15,20 @@ export default {
   data() {
     return {
       chalk: '', // content of theme-chalk css
-      theme: ''
+      theme: '',
     }
   },
   computed: {
     defaultTheme() {
       return this.$store.state.settings.theme
-    }
+    },
   },
   watch: {
     defaultTheme: {
       handler: function(val, oldVal) {
         this.theme = val
       },
-      immediate: true
+      immediate: true,
     },
     async theme(val) {
       const oldVal = this.chalk ? this.theme : ORIGINAL_THEME
@@ -42,7 +42,7 @@ export default {
         customClass: 'theme-message',
         type: 'success',
         duration: 0,
-        iconClass: 'el-icon-loading'
+        iconClass: 'el-icon-loading',
       })
 
       const getHandler = (variable, id) => {
@@ -83,7 +83,7 @@ export default {
       this.$emit('change', val)
 
       $message.close()
-    }
+    },
   },
 
   methods: {
@@ -152,8 +152,8 @@ export default {
       }
       clusters.push(shadeColor(theme, 0.1))
       return clusters
-    }
-  }
+    },
+  },
 }
 </script>
 

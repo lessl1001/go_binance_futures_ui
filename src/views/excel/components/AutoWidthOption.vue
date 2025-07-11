@@ -17,8 +17,8 @@ export default {
   props: {
     value: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
   computed: {
     autoWidth: {
@@ -27,8 +27,8 @@ export default {
       },
       set(val) {
         this.$emit('input', val)
-      }
-    }
-  }
+      },
+    },
+  },
 }
 </script>

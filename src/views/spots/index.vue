@@ -89,7 +89,7 @@
         <el-table
           v-loading="listLoading"
           :data="list"
-          element-loading-text="Loading"
+          element-loading-text="$t('table.loading')"
           border
           fit
           size="mini"
@@ -259,7 +259,7 @@
         <el-table
           v-loading="listLoading"
           :data="list"
-          element-loading-text="Loading"
+          element-loading-text="$t('table.loading')"
           border
           fit
           size="mini"
@@ -429,7 +429,7 @@
         <el-table
           v-loading="listLoading"
           :data="list"
-          element-loading-text="Loading"
+          element-loading-text="$t('table.loading')"
           border
           fit
           size="mini"

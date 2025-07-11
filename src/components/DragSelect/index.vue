@@ -12,8 +12,8 @@ export default {
   props: {
     value: {
       type: Array,
-      required: true
-    }
+      required: true,
+    },
   },
   computed: {
     selectVal: {
@@ -22,8 +22,8 @@ export default {
       },
       set(val) {
         this.$emit('input', [...val])
-      }
-    }
+      },
+    },
   },
   mounted() {
     this.setSort()
@@ -41,10 +41,10 @@ export default {
         onEnd: evt => {
           const targetRow = this.value.splice(evt.oldIndex, 1)[0]
           this.value.splice(evt.newIndex, 0, targetRow)
-        }
+        },
       })
-    }
-  }
+    },
+  },
 }
 </script>
 

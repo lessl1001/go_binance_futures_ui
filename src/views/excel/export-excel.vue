@@ -13,7 +13,7 @@
       </a>
     </div>
 
-    <el-table v-loading="listLoading" :data="list" element-loading-text="Loading..." border fit highlight-current-row>
+    <el-table v-loading="listLoading" :data="list" element-loading-text="$t('table.loading')" border fit highlight-current-row>
       <el-table-column align="center" label="Id" width="95">
         <template slot-scope="scope">
           {{ scope.$index }}
@@ -61,7 +61,7 @@ export default {
       downloadLoading: false,
       filename: '',
       autoWidth: true,
-      bookType: 'xlsx'
+      bookType: 'xlsx',
     }
   },
   created() {
@@ -87,7 +87,7 @@ export default {
           data,
           filename: this.filename,
           autoWidth: this.autoWidth,
-          bookType: this.bookType
+          bookType: this.bookType,
         })
         this.downloadLoading = false
       })
@@ -100,8 +100,8 @@ export default {
           return v[j]
         }
       }))
-    }
-  }
+    },
+  },
 }
 </script>
 

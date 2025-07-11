@@ -33,7 +33,7 @@ import * as filters from './filters' // global filters
 
 Vue.use(Element, {
   size: 'mini', // mini, small, medium, default
-  i18n: (key, value) => i18n.t(key, value)
+  i18n: (key, value) => i18n.t(key, value),
 })
 
 // register global utility filters
@@ -48,5 +48,5 @@ new Vue({
   router,
   store,
   i18n,
-  render: h => h(App)
+  render: h => h(App),
 })

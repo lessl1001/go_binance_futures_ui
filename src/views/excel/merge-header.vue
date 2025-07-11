@@ -7,7 +7,7 @@
       ref="multipleTable"
       v-loading="listLoading"
       :data="list"
-      element-loading-text="Loading"
+      element-loading-text="$t('table.loading')"
       border
       fit
       highlight-current-row
@@ -55,7 +55,7 @@ export default {
     return {
       list: null,
       listLoading: true,
-      downloadLoading: false
+      downloadLoading: false,
     }
   },
   created() {
@@ -82,7 +82,7 @@ export default {
           multiHeader,
           header,
           merges,
-          data
+          data,
         })
         this.downloadLoading = false
       })
@@ -95,7 +95,7 @@ export default {
           return v[j]
         }
       }))
-    }
-  }
+    },
+  },
 }
 </script>

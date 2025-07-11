@@ -65,11 +65,11 @@ export default {
           name: '',
           email: '',
           avatar: '',
-          role: ''
+          role: '',
         }
-      }
-    }
-  }
+      },
+    },
+  },
 }
 </script>
 

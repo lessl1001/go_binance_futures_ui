@@ -64,14 +64,14 @@ export default {
     Screenfull,
     // SizeSelect,
     LangSelect,
-    Search
+    Search,
   },
   computed: {
     ...mapGetters([
       'sidebar',
       'avatar',
-      'device'
-    ])
+      'device',
+    ]),
   },
   methods: {
     toggleSideBar() {
@@ -81,8 +81,8 @@ export default {
       removeToken()
       // await this.$store.dispatch('user/logout')
       this.$router.push(`/login?redirect=${this.$route.fullPath}`)
-    }
-  }
+    },
+  },
 }
 </script>
 

@@ -27,7 +27,7 @@
     <el-table
       v-loading="listLoading"
       :data="list"
-      element-loading-text="Loading"
+      element-loading-text="$t('table.loading')"
       border
       fit
       size="mini"
@@ -110,7 +110,7 @@
     <el-dialog :title="dialogTitle" :visible.sync="dialogHistoryVisible">
       <el-table
         :data="history"
-        element-loading-text="Loading"
+        element-loading-text="$t('table.loading')"
         border
         fit
         size="mini"

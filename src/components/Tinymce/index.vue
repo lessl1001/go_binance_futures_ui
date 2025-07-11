@@ -28,33 +28,33 @@ export default {
       type: String,
       default: function() {
         return 'vue-tinymce-' + +new Date() + ((Math.random() * 1000).toFixed(0) + '')
-      }
+      },
     },
     value: {
       type: String,
-      default: ''
+      default: '',
     },
     toolbar: {
       type: Array,
       required: false,
       default() {
         return []
-      }
+      },
     },
     menubar: {
       type: String,
-      default: 'file edit insert view format table'
+      default: 'file edit insert view format table',
     },
     height: {
       type: [Number, String],
       required: false,
-      default: 360
+      default: 360,
     },
     width: {
       type: [Number, String],
       required: false,
-      default: 'auto'
-    }
+      default: 'auto',
+    },
   },
   data() {
     return {
@@ -66,8 +66,8 @@ export default {
         'en': 'en',
         'zh': 'zh_CN',
         'es': 'es_MX',
-        'ja': 'ja'
-      }
+        'ja': 'ja',
+      },
     }
   },
   computed: {
@@ -80,7 +80,7 @@ export default {
         return `${width}px`
       }
       return width
-    }
+    },
   },
   watch: {
     value(val) {
@@ -92,7 +92,7 @@ export default {
     language() {
       this.destroyTinymce()
       this.$nextTick(() => this.initTinymce())
-    }
+    },
   },
   mounted() {
     this.init()
@@ -158,7 +158,7 @@ export default {
         // it will try to keep these URLs intact
         // https://www.tiny.cloud/docs-3x/reference/configuration/Configuration3x@convert_urls/
         // https://stackoverflow.com/questions/5196205/disable-tinymce-absolute-to-relative-url-conversions
-        convert_urls: false
+        convert_urls: false,
         // 整合七牛上传
         // images_dataimg_filter(img) {
         //   setTimeout(() => {
@@ -212,8 +212,8 @@ export default {
     },
     imageSuccessCBK(arr) {
       arr.forEach(v => window.tinymce.get(this.tinymceId).insertContent(`<img class="wscnph" src="${v.url}" >`))
-    }
-  }
+    },
+  },
 }
 </script>
 

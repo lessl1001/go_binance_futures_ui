@@ -87,10 +87,10 @@ export default {
       const statusMap = {
         published: 'success',
         draft: 'info',
-        deleted: 'danger'
+        deleted: 'danger',
       }
       return statusMap[status]
-    }
+    },
   },
   data() {
     return {
@@ -98,8 +98,8 @@ export default {
       listLoading: true,
       listQuery: {
         page: 1,
-        limit: 10
-      }
+        limit: 10,
+      },
     }
   },
   created() {
@@ -122,7 +122,7 @@ export default {
       row.edit = false
       this.$message({
         message: 'The title has been restored to the original value',
-        type: 'warning'
+        type: 'warning',
       })
     },
     confirmEdit(row) {
@@ -130,10 +130,10 @@ export default {
       row.originalTitle = row.title
       this.$message({
         message: 'The title has been edited',
-        type: 'success'
+        type: 'success',
       })
-    }
-  }
+    },
+  },
 }
 </script>
 

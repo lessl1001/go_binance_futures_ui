@@ -19,7 +19,7 @@ export default {
   name: 'Guide',
   data() {
     return {
-      driver: null
+      driver: null,
     }
   },
   mounted() {
@@ -29,7 +29,7 @@ export default {
     guide() {
       this.driver.defineSteps(steps)
       this.driver.start()
-    }
-  }
+    },
+  },
 }
 </script>

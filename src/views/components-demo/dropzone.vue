@@ -24,8 +24,8 @@ export default {
     dropzoneR(file) {
       console.log(file)
       this.$message({ message: 'Delete success', type: 'success' })
-    }
-  }
+    },
+  },
 }
 </script>
 

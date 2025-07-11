@@ -85,25 +85,25 @@ export default {
       tableData: [{
         date: '2016-05-03',
         name: 'Tom',
-        address: 'No. 189, Grove St, Los Angeles'
+        address: 'No. 189, Grove St, Los Angeles',
       },
       {
         date: '2016-05-02',
         name: 'Tom',
-        address: 'No. 189, Grove St, Los Angeles'
+        address: 'No. 189, Grove St, Los Angeles',
       },
       {
         date: '2016-05-04',
         name: 'Tom',
-        address: 'No. 189, Grove St, Los Angeles'
+        address: 'No. 189, Grove St, Los Angeles',
       },
       {
         date: '2016-05-01',
         name: 'Tom',
-        address: 'No. 189, Grove St, Los Angeles'
+        address: 'No. 189, Grove St, Los Angeles',
       }],
       options: [],
-      value: ''
+      value: '',
     }
   },
   computed: {
@@ -114,13 +114,13 @@ export default {
       set(lang) {
         this.$i18n.locale = lang
         this.$store.dispatch('app/setLanguage', lang)
-      }
-    }
+      },
+    },
   },
   watch: {
     lang() {
       this.setOptions()
-    }
+    },
   },
   created() {
     if (!this.$i18n.getLocaleMessage('en')[viewName]) {
@@ -136,19 +136,19 @@ export default {
       this.options = [
         {
           value: '1',
-          label: this.$t('i18nView.one')
+          label: this.$t('i18nView.one'),
         },
         {
           value: '2',
-          label: this.$t('i18nView.two')
+          label: this.$t('i18nView.two'),
         },
         {
           value: '3',
-          label: this.$t('i18nView.three')
-        }
+          label: this.$t('i18nView.three'),
+        },
       ]
-    }
-  }
+    },
+  },
 }
 </script>
 

@@ -20,7 +20,7 @@
     <el-table
       v-loading="listLoading"
       :data="list"
-      element-loading-text="Loading"
+      element-loading-text="$t('table.loading')"
       border
       fit
       size="mini"
@@ -162,12 +162,12 @@ export default {
       enableLoading: false,
       dialogFormVisible: false,
       dialogLoading: false,
-      dialogTitle: '新增币种信息',
+      dialogTitle: this.$t('table.addCoinInfo'),
       info: {},
       rowKey(row) {
         return row.symbol
       },
-      expandKeys: []
+      expandKeys: [],
     }
   },
   async created() {
@@ -181,7 +181,7 @@ export default {
     typeText(type) {
       return {
         'up': this.$t('trade.up'),
-        'down': this.$t('trade.down')
+        'down': this.$t('trade.down'),
       }[type] || ''
     },
     parseTime,
@@ -234,12 +234,12 @@ export default {
         ...row,
         'type': 1, // 现货交易
         'createTime': +new Date(),
-        'updateTime': +new Date()
+        'updateTime': +new Date(),
       }
       await addListenCoin(data)
       await this.fetchData()
       this.dialogFormVisible = false
-    }
-  }
+    },
+  },
 }
 </script>

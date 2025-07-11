@@ -58,9 +58,9 @@ export default {
       set(val) {
         this.$store.dispatch('settings/changeSetting', {
           key: 'fixedHeader',
-          value: val
+          value: val,
         })
-      }
+      },
     },
     tagsView: {
       get() {
@@ -69,9 +69,9 @@ export default {
       set(val) {
         this.$store.dispatch('settings/changeSetting', {
           key: 'tagsView',
-          value: val
+          value: val,
         })
-      }
+      },
     },
     sidebarLogo: {
       get() {
@@ -80,9 +80,9 @@ export default {
       set(val) {
         this.$store.dispatch('settings/changeSetting', {
           key: 'sidebarLogo',
-          value: val
+          value: val,
         })
-      }
+      },
     },
     supportPinyinSearch: {
       get() {
@@ -91,22 +91,22 @@ export default {
       set(val) {
         this.$store.dispatch('settings/changeSetting', {
           key: 'supportPinyinSearch',
-          value: val
+          value: val,
         })
-      }
+      },
     },
     lang() {
       return this.$store.getters.language
-    }
+    },
   },
   methods: {
     themeChange(val) {
       this.$store.dispatch('settings/changeSetting', {
         key: 'theme',
-        value: val
+        value: val,
       })
-    }
-  }
+    },
+  },
 }
 </script>
 

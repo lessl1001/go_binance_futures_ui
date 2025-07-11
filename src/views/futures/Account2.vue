@@ -4,7 +4,7 @@
       <!-- <el-tab-pane :label="$t('trade.assets')" name="account">
         <el-table
           :data="account.assets"
-          element-loading-text="Loading"
+          element-loading-text="$t('table.loading')"
           border
           fit
           size="mini"
@@ -106,7 +106,7 @@
         </div>
         <el-table
           :data="positions"
-          element-loading-text="Loading"
+          element-loading-text="$t('table.loading')"
           border
           fit
           size="mini"
@@ -233,7 +233,7 @@
       <el-tab-pane :label="$t('trade.openOrder')" name="openOrder">
         <el-table
           :data="openOrders"
-          element-loading-text="Loading"
+          element-loading-text="$t('table.loading')"
           border
           fit
           size="mini"
