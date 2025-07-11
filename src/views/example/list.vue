@@ -68,10 +68,10 @@ export default {
       const statusMap = {
         published: 'success',
         draft: 'info',
-        deleted: 'danger'
+        deleted: 'danger',
       }
       return statusMap[status]
-    }
+    },
   },
   data() {
     return {
@@ -80,8 +80,8 @@ export default {
       listLoading: true,
       listQuery: {
         page: 1,
-        limit: 20
-      }
+        limit: 20,
+      },
     }
   },
   created() {
@@ -95,8 +95,8 @@ export default {
         this.total = response.data.total
         this.listLoading = false
       })
-    }
-  }
+    },
+  },
 }
 </script>
 

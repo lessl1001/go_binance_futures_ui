@@ -37,14 +37,14 @@ export default {
   props: {
     color: {
       type: String,
-      default: '#1890ff'
-    }
+      default: '#1890ff',
+    },
   },
   data() {
     return {
       dialogVisible: false,
       listObj: {},
-      fileList: []
+      fileList: [],
     }
   },
   methods: {
@@ -96,8 +96,8 @@ export default {
         }
         resolve(true)
       })
-    }
-  }
+    },
+  },
 }
 </script>
 

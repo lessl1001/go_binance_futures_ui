@@ -4,7 +4,7 @@ export function getNoticeCoins(query = {}) {
   return request({
     url: '/notice/coin',
     method: 'get',
-    params: query
+    params: query,
   })
 }
 
@@ -12,7 +12,7 @@ export function setNoticeCoin(id, data) {
   return request({
     url: `/notice/coin/${id}`,
     method: 'put',
-    data
+    data,
   })
 }
 
@@ -20,20 +20,20 @@ export function addNoticeCoin(data) {
   return request({
     url: `/notice/coin`,
     method: 'post',
-    data
+    data,
   })
 }
 
 export function delNoticeCoin(id) {
   return request({
     url: `/notice/coin/${id}`,
-    method: 'delete'
+    method: 'delete',
   })
 }
 
 export function enableNoticeCoin(flag = 1) {
   return request({
     url: `/notice/coin/enable/${flag}`,
-    method: 'put'
+    method: 'put',
   })
 }

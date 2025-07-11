@@ -11,8 +11,8 @@ export default {
   props: {
     value: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
   computed: {
     filename: {
@@ -21,8 +21,8 @@ export default {
       },
       set(val) {
         this.$emit('input', val)
-      }
-    }
-  }
+      },
+    },
+  },
 }
 </script>

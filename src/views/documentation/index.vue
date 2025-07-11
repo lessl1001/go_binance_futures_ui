@@ -26,10 +26,10 @@ export default {
         { title: '自行封装 component', href: 'https://segmentfault.com/a/1190000009090836' },
         { title: '优雅的使用 icon', href: 'https://juejin.im/post/59bb864b5188257e7a427c09' },
         { title: 'webpack4（上）', href: 'https://juejin.im/post/59bb864b5188257e7a427c09' },
-        { title: 'webpack4（下）', href: 'https://juejin.im/post/5b5d6d6f6fb9a04fea58aabc' }
-      ]
+        { title: 'webpack4（下）', href: 'https://juejin.im/post/5b5d6d6f6fb9a04fea58aabc' },
+      ],
     }
-  }
+  },
 }
 </script>
 

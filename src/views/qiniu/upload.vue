@@ -17,7 +17,7 @@ export default {
     return {
       dataObj: { token: '', key: '' },
       image_uri: [],
-      fileList: []
+      fileList: [],
     }
   },
   methods: {
@@ -35,7 +35,7 @@ export default {
           reject(false)
         })
       })
-    }
-  }
+    },
+  },
 }
 </script>

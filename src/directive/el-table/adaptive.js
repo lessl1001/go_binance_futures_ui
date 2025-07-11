@@ -37,5 +37,5 @@ export default {
   },
   unbind(el) {
     removeResizeListener(window.document.body, el.resizeListener)
-  }
+  },
 }

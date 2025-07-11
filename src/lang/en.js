@@ -450,7 +450,7 @@ export default {
     optimizationMonitor: 'Optimization Monitor',
     liveDeployment: 'Live Deployment',
     taskHistory: 'Task History',
-    
+
     // Strategy Editor
     strategyName: 'Strategy Name',
     strategyDescription: 'Strategy Description',
@@ -460,7 +460,7 @@ export default {
     saveStrategy: 'Save Strategy',
     loadTemplate: 'Load Template',
     customStrategy: 'Custom Strategy',
-    
+
     // Parameter Space
     parameterName: 'Parameter Name',
     parameterType: 'Parameter Type',
@@ -472,7 +472,7 @@ export default {
     removeParameter: 'Remove Parameter',
     parameterRange: 'Parameter Range',
     optimizationTarget: 'Optimization Target',
-    
+
     // Task Management
     taskName: 'Task Name',
     taskDescription: 'Task Description',
@@ -485,7 +485,7 @@ export default {
     taskProgress: 'Task Progress',
     estimatedTime: 'Estimated Time',
     elapsedTime: 'Elapsed Time',
-    
+
     // Task Status
     statusPending: 'Pending',
     statusRunning: 'Running',
@@ -493,7 +493,7 @@ export default {
     statusCompleted: 'Completed',
     statusFailed: 'Failed',
     statusCancelled: 'Cancelled',
-    
+
     // Optimization Monitor
     currentParameters: 'Current Parameters',
     bestParameters: 'Best Parameters',
@@ -502,7 +502,7 @@ export default {
     metricsChart: 'Metrics Chart',
     parametersHeatmap: 'Parameters Heatmap',
     convergenceChart: 'Convergence Chart',
-    
+
     // Live Deployment
     deploymentName: 'Deployment Name',
     deployToLive: 'Deploy to Live',
@@ -511,34 +511,34 @@ export default {
     stopDeployment: 'Stop Deployment',
     optimalParameters: 'Optimal Parameters',
     backtestResults: 'Backtest Results',
-    
+
     // Task History
     completedTasks: 'Completed Tasks',
     taskResults: 'Task Results',
     exportResults: 'Export Results',
     viewReport: 'View Report',
     downloadReport: 'Download Report',
-    
+
     // Common
     historicalRange: 'Historical Range',
     startDate: 'Start Date',
     endDate: 'End Date',
     symbol: 'Symbol',
     timeframe: 'Timeframe',
-    
+
     // Error Messages
     validationError: 'Validation Error',
     taskCreateError: 'Failed to create task',
     taskStartError: 'Failed to start task',
     taskStopError: 'Failed to stop task',
     deploymentError: 'Deployment failed',
-    
+
     // Success Messages
     taskCreated: 'Task created successfully',
     taskStarted: 'Task started successfully',
     taskStopped: 'Task stopped successfully',
     deploymentSuccess: 'Deployment successful',
-    
+
     // Confirm Messages
     confirmStopTask: 'Are you sure you want to stop this task?',
     confirmDeleteTask: 'Are you sure you want to delete this task?',

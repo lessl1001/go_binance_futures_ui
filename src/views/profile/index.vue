@@ -41,15 +41,15 @@ export default {
   data() {
     return {
       user: {},
-      activeTab: 'activity'
+      activeTab: 'activity',
     }
   },
   computed: {
     ...mapGetters([
       'name',
       'avatar',
-      'roles'
-    ])
+      'roles',
+    ]),
   },
   created() {
     this.getUser()
@@ -60,9 +60,9 @@ export default {
         name: this.name,
         role: this.roles.join(' | '),
         email: 'admin@test.com',
-        avatar: this.avatar
+        avatar: this.avatar,
       }
-    }
-  }
+    },
+  },
 }
 </script>

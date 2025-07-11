@@ -451,7 +451,7 @@ export default {
     optimizationMonitor: '优化监控',
     liveDeployment: '实盘部署',
     taskHistory: '任务历史',
-    
+
     // Strategy Editor
     strategyName: '策略名称',
     strategyDescription: '策略描述',
@@ -461,7 +461,7 @@ export default {
     saveStrategy: '保存策略',
     loadTemplate: '加载模板',
     customStrategy: '自定义策略',
-    
+
     // Parameter Space
     parameterName: '参数名称',
     parameterType: '参数类型',
@@ -473,7 +473,7 @@ export default {
     removeParameter: '移除参数',
     parameterRange: '参数范围',
     optimizationTarget: '优化目标',
-    
+
     // Task Management
     taskName: '任务名称',
     taskDescription: '任务描述',
@@ -486,7 +486,7 @@ export default {
     taskProgress: '任务进度',
     estimatedTime: '预计时间',
     elapsedTime: '已用时间',
-    
+
     // Task Status
     statusPending: '待处理',
     statusRunning: '运行中',
@@ -494,7 +494,7 @@ export default {
     statusCompleted: '已完成',
     statusFailed: '失败',
     statusCancelled: '已取消',
-    
+
     // Optimization Monitor
     currentParameters: '当前参数',
     bestParameters: '最优参数',
@@ -503,7 +503,7 @@ export default {
     metricsChart: '指标图表',
     parametersHeatmap: '参数热力图',
     convergenceChart: '收敛图表',
-    
+
     // Live Deployment
     deploymentName: '部署名称',
     deployToLive: '部署到实盘',
@@ -512,34 +512,34 @@ export default {
     stopDeployment: '停止部署',
     optimalParameters: '最优参数',
     backtestResults: '回测结果',
-    
+
     // Task History
     completedTasks: '已完成任务',
     taskResults: '任务结果',
     exportResults: '导出结果',
     viewReport: '查看报告',
     downloadReport: '下载报告',
-    
+
     // Common
     historicalRange: '历史区间',
     startDate: '开始日期',
     endDate: '结束日期',
     symbol: '交易对',
     timeframe: '时间周期',
-    
+
     // Error Messages
     validationError: '验证错误',
     taskCreateError: '创建任务失败',
     taskStartError: '启动任务失败',
     taskStopError: '停止任务失败',
     deploymentError: '部署失败',
-    
+
     // Success Messages
     taskCreated: '任务创建成功',
     taskStarted: '任务启动成功',
     taskStopped: '任务停止成功',
     deploymentSuccess: '部署成功',
-    
+
     // Confirm Messages
     confirmStopTask: '确定要停止此任务吗？',
     confirmDeleteTask: '确定要删除此任务吗？',

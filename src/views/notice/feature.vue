@@ -224,7 +224,7 @@ export default {
       rowKey(row) {
         return row.symbol
       },
-      expandKeys: []
+      expandKeys: [],
     }
   },
   async created() {
@@ -284,12 +284,12 @@ export default {
         ...row,
         'type': 2, // 合约交易
         'createTime': +new Date(),
-        'updateTime': +new Date()
+        'updateTime': +new Date(),
       }
       await addNoticeCoin(data)
       await this.fetchData()
       this.dialogFormVisible = false
-    }
-  }
+    },
+  },
 }
 </script>

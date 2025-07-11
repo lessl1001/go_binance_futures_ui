@@ -10,7 +10,7 @@ const aiOptimizationRouter = [
     name: 'AiOptimization',
     meta: {
       title: 'aiOptimization',
-      icon: 'el-icon-cpu'
+      icon: 'el-icon-cpu',
     },
     children: [
       {
@@ -20,8 +20,8 @@ const aiOptimizationRouter = [
         meta: {
           title: 'strategyEditor',
           icon: 'el-icon-edit',
-          noCache: true
-        }
+          noCache: true,
+        },
       },
       {
         path: 'parameter-space',
@@ -30,8 +30,8 @@ const aiOptimizationRouter = [
         meta: {
           title: 'parameterSpace',
           icon: 'el-icon-setting',
-          noCache: true
-        }
+          noCache: true,
+        },
       },
       {
         path: 'task-management',
@@ -40,8 +40,8 @@ const aiOptimizationRouter = [
         meta: {
           title: 'taskManagement',
           icon: 'el-icon-monitor',
-          noCache: true
-        }
+          noCache: true,
+        },
       },
       {
         path: 'optimization-monitor',
@@ -50,8 +50,8 @@ const aiOptimizationRouter = [
         meta: {
           title: 'optimizationMonitor',
           icon: 'el-icon-data-analysis',
-          noCache: true
-        }
+          noCache: true,
+        },
       },
       {
         path: 'live-deployment',
@@ -60,8 +60,8 @@ const aiOptimizationRouter = [
         meta: {
           title: 'liveDeployment',
           icon: 'el-icon-upload',
-          noCache: true
-        }
+          noCache: true,
+        },
       },
       {
         path: 'task-history',
@@ -70,11 +70,11 @@ const aiOptimizationRouter = [
         meta: {
           title: 'taskHistory',
           icon: 'el-icon-folder-opened',
-          noCache: true
-        }
-      }
-    ]
-  }
+          noCache: true,
+        },
+      },
+    ],
+  },
 ]
 
 export default aiOptimizationRouter
