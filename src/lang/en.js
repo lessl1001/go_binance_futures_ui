@@ -442,4 +442,106 @@ export default {
     slow_period: 'slow period',
     signal_period: 'signal period',
   },
+  aiOptimization: {
+    aiOptimization: 'AI Optimization',
+    strategyEditor: 'Strategy Editor',
+    parameterSpace: 'Parameter Space',
+    taskManagement: 'Task Management',
+    optimizationMonitor: 'Optimization Monitor',
+    liveDeployment: 'Live Deployment',
+    taskHistory: 'Task History',
+    
+    // Strategy Editor
+    strategyName: 'Strategy Name',
+    strategyDescription: 'Strategy Description',
+    strategyExpression: 'Strategy Expression',
+    strategyTemplate: 'Strategy Template',
+    validateExpression: 'Validate Expression',
+    saveStrategy: 'Save Strategy',
+    loadTemplate: 'Load Template',
+    customStrategy: 'Custom Strategy',
+    
+    // Parameter Space
+    parameterName: 'Parameter Name',
+    parameterType: 'Parameter Type',
+    minValue: 'Min Value',
+    maxValue: 'Max Value',
+    stepSize: 'Step Size',
+    defaultValue: 'Default Value',
+    addParameter: 'Add Parameter',
+    removeParameter: 'Remove Parameter',
+    parameterRange: 'Parameter Range',
+    optimizationTarget: 'Optimization Target',
+    
+    // Task Management
+    taskName: 'Task Name',
+    taskDescription: 'Task Description',
+    createTask: 'Create Task',
+    startTask: 'Start Task',
+    stopTask: 'Stop Task',
+    pauseTask: 'Pause Task',
+    resumeTask: 'Resume Task',
+    taskStatus: 'Task Status',
+    taskProgress: 'Task Progress',
+    estimatedTime: 'Estimated Time',
+    elapsedTime: 'Elapsed Time',
+    
+    // Task Status
+    statusPending: 'Pending',
+    statusRunning: 'Running',
+    statusPaused: 'Paused',
+    statusCompleted: 'Completed',
+    statusFailed: 'Failed',
+    statusCancelled: 'Cancelled',
+    
+    // Optimization Monitor
+    currentParameters: 'Current Parameters',
+    bestParameters: 'Best Parameters',
+    objectiveValue: 'Objective Value',
+    iterationCount: 'Iteration Count',
+    metricsChart: 'Metrics Chart',
+    parametersHeatmap: 'Parameters Heatmap',
+    convergenceChart: 'Convergence Chart',
+    
+    // Live Deployment
+    deploymentName: 'Deployment Name',
+    deployToLive: 'Deploy to Live',
+    deploymentStatus: 'Deployment Status',
+    livePerformance: 'Live Performance',
+    stopDeployment: 'Stop Deployment',
+    optimalParameters: 'Optimal Parameters',
+    backtestResults: 'Backtest Results',
+    
+    // Task History
+    completedTasks: 'Completed Tasks',
+    taskResults: 'Task Results',
+    exportResults: 'Export Results',
+    viewReport: 'View Report',
+    downloadReport: 'Download Report',
+    
+    // Common
+    historicalRange: 'Historical Range',
+    startDate: 'Start Date',
+    endDate: 'End Date',
+    symbol: 'Symbol',
+    timeframe: 'Timeframe',
+    
+    // Error Messages
+    validationError: 'Validation Error',
+    taskCreateError: 'Failed to create task',
+    taskStartError: 'Failed to start task',
+    taskStopError: 'Failed to stop task',
+    deploymentError: 'Deployment failed',
+    
+    // Success Messages
+    taskCreated: 'Task created successfully',
+    taskStarted: 'Task started successfully',
+    taskStopped: 'Task stopped successfully',
+    deploymentSuccess: 'Deployment successful',
+    
+    // Confirm Messages
+    confirmStopTask: 'Are you sure you want to stop this task?',
+    confirmDeleteTask: 'Are you sure you want to delete this task?',
+    confirmDeployment: 'Are you sure you want to deploy to live trading?',
+  },
 }
