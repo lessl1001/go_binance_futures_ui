@@ -1,5 +1,5 @@
 <template>
-  <div v-loading.fullscreen.lock="fullscreenLoading" class="main-article" element-loading-text="Efforts to generate PDF">
+  <div v-loading.fullscreen.lock="fullscreenLoading" class="main-article" element-loading-text="$t('table.loading')">
     <div class="article__heading">
       <div class="article__heading__title">
         {{ article.title }}

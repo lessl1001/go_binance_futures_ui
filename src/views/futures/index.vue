@@ -62,14 +62,14 @@
           class="filter-item"
           size="mini"
         />
-        <el-select v-model="search.pin" size="mini" style="width: 100px;" clearable placeholder="pin">
+        <el-select v-model="search.pin" size="mini" style="width: 100px;" clearable :placeholder="$t('table.placeholderPin')">
           <el-option :label="$t('trade.pin')" value="1" />
         </el-select>
-        <el-select v-model="search.enable" size="mini" style="width: 100px;" clearable placeholder="status">
+        <el-select v-model="search.enable" size="mini" style="width: 100px;" clearable :placeholder="$t('table.placeholderStatus')">
           <el-option :label="$t('table.open')" value="1" />
           <el-option :label="$t('table.close')" value="0" />
         </el-select>
-        <el-select v-model="search.margin_type" size="mini" style="width: 120px;" clearable placeholder="margin_type">
+        <el-select v-model="search.margin_type" size="mini" style="width: 120px;" clearable :placeholder="$t('table.placeholderMarginType')">
           <el-option :label="$t('trade.ISOLATED')" value="ISOLATED" />
           <el-option :label="$t('trade.CROSSED')" value="CROSSED" />
         </el-select>
@@ -1218,7 +1218,7 @@
     <el-dialog :title="dialogStrategyTitle" :visible.sync="dialogStrategyVisible" width="75%">
       <div style="display:flex; gap: 10px;">
         <el-button type="primary" @click="addStrategy">{{ $t('table.add') }}</el-button>
-        <el-select v-model="batchInfo.strategyTemplateId" clearable size="mini" placeholder="select template" @change="selectStrategyTemplate">
+        <el-select v-model="batchInfo.strategyTemplateId" clearable size="mini" :placeholder="$t('table.placeholderSelectTemplate')" @change="selectStrategyTemplate">
           <el-option v-for="item in strategyTemplates" :key="item.id" :label="item.name" :value="item.id" />
         </el-select>
       </div>
