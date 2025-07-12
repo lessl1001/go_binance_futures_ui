@@ -171,7 +171,40 @@
             </el-col>
             <el-col :span="12">
               <el-form-item :label="$t('aiOptimization.symbol')" prop="symbol">
-                <el-input v-model="newTask.symbol" placeholder="e.g., BTCUSDT" />
+                <el-select v-model="newTask.symbol" style="width: 100%">
+                  <el-option
+                    v-for="symbol in supportedSymbols"
+                    :key="symbol.value"
+                    :label="symbol.label"
+                    :value="symbol.value"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item :label="$t('aiOptimization.timeframe')" prop="timeframe">
+                <el-select v-model="newTask.timeframe" style="width: 100%">
+                  <el-option
+                    v-for="timeframe in supportedTimeframes"
+                    :key="timeframe.value"
+                    :label="timeframe.label"
+                    :value="timeframe.value"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="初始资金" prop="initial_capital">
+                <el-input-number
+                  v-model="newTask.initial_capital"
+                  :min="1000"
+                  :max="1000000"
+                  :step="1000"
+                  style="width: 100%"
+                />
               </el-form-item>
             </el-col>
           </el-row>
@@ -187,7 +220,7 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item :label="$t('aiOptimization.strategyTemplate')" prop="strategy_id">
-                <el-select v-model="newTask.strategy_id" style="width: 100%">
+                <el-select v-model="newTask.strategy_id" style="width: 100%" @change="onStrategyChange">
                   <el-option
                     v-for="strategy in strategies"
                     :key="strategy.id"
@@ -199,7 +232,7 @@
             </el-col>
             <el-col :span="12">
               <el-form-item :label="$t('aiOptimization.parameterSpace')" prop="parameter_space_id">
-                <el-select v-model="newTask.parameter_space_id" style="width: 100%">
+                <el-select v-model="newTask.parameter_space_id" style="width: 100%" @change="onParameterSpaceChange">
                   <el-option
                     v-for="space in parameterSpaces"
                     :key="space.id"
@@ -211,19 +244,28 @@
             </el-col>
           </el-row>
 
+          <!-- Strategy Preview -->
+          <div v-if="selectedStrategy" class="strategy-preview">
+            <h4>策略预览</h4>
+            <div class="strategy-content">
+              <p><strong>策略名称:</strong> {{ selectedStrategy.name }}</p>
+              <p><strong>策略描述:</strong> {{ selectedStrategy.description }}</p>
+              <p><strong>策略表达式:</strong></p>
+              <pre>{{ selectedStrategy.expression }}</pre>
+            </div>
+          </div>
+
+          <!-- Parameter Space Preview -->
+          <div v-if="selectedParameterSpace" class="parameter-space-preview">
+            <h4>参数空间预览</h4>
+            <div class="parameter-content">
+              <p><strong>参数空间名称:</strong> {{ selectedParameterSpace.name }}</p>
+              <p><strong>启用参数数量:</strong> {{ getEnabledParametersCount(selectedParameterSpace) }}</p>
+              <p><strong>优化目标:</strong> {{ optimizationTargets[selectedParameterSpace.optimization_target]?.label }}</p>
+            </div>
+          </div>
+
           <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item :label="$t('aiOptimization.timeframe')" prop="timeframe">
-                <el-select v-model="newTask.timeframe" style="width: 100%">
-                  <el-option label="1m" value="1m" />
-                  <el-option label="5m" value="5m" />
-                  <el-option label="15m" value="15m" />
-                  <el-option label="1h" value="1h" />
-                  <el-option label="4h" value="4h" />
-                  <el-option label="1d" value="1d" />
-                </el-select>
-              </el-form-item>
-            </el-col>
             <el-col :span="12">
               <el-form-item :label="$t('aiOptimization.historicalRange')" prop="historical_range">
                 <el-date-picker
@@ -238,16 +280,44 @@
                 />
               </el-form-item>
             </el-col>
+            <el-col :span="12">
+              <el-form-item label="初始资金" prop="initial_capital">
+                <el-input-number
+                  v-model="newTask.initial_capital"
+                  :min="1000"
+                  :max="1000000"
+                  :step="1000"
+                  style="width: 100%"
+                />
+              </el-form-item>
+            </el-col>
           </el-row>
 
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item :label="$t('aiOptimization.optimizationTarget')" prop="optimization_target">
                 <el-select v-model="newTask.optimization_target" style="width: 100%">
-                  <el-option label="Profit" value="profit" />
-                  <el-option label="Sharpe Ratio" value="sharpe_ratio" />
-                  <el-option label="Max Drawdown" value="max_drawdown" />
-                  <el-option label="Win Rate" value="win_rate" />
+                  <el-option
+                    v-for="(target, key) in optimizationTargets"
+                    :key="key"
+                    :label="target.label"
+                    :value="key"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="最大迭代次数" prop="max_iterations">
+                <el-input-number
+                  v-model="newTask.max_iterations"
+                  :min="100"
+                  :max="10000"
+                  :step="100"
+                  style="width: 100%"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
                   <el-option label="Profit Factor" value="profit_factor" />
                 </el-select>
               </el-form-item>
@@ -348,9 +418,22 @@ import {
   stopOptimizationTask,
   pauseOptimizationTask,
   resumeOptimizationTask,
+  getOptimizationTask
 } from '@/api/ai-optimization'
 import { getStrategyTemplates } from '@/api/ai-optimization'
 import { getParameterSpaces } from '@/api/ai-optimization'
+import { 
+  taskStatusTypes, 
+  optimizationTargets,
+  defaultTaskConfig,
+  convertTaskToBackendFormat,
+  convertTaskFromBackendFormat,
+  validateTaskConfig,
+  formatTaskDetails,
+  generateTaskSummary,
+  supportedSymbols,
+  supportedTimeframes
+} from '@/utils/backend-task-management'
 
 export default {
   name: 'TaskManagement',
@@ -365,23 +448,15 @@ export default {
       createTaskDialog: false,
       viewTaskDialog: false,
       selectedTask: null,
-      newTask: {
-        name: '',
-        description: '',
-        symbol: '',
-        strategy_id: '',
-        parameter_space_id: '',
-        timeframe: '1h',
-        historical_range: [],
-        optimization_target: 'profit',
-        max_iterations: 100,
-      },
+      selectedStrategy: null,
+      selectedParameterSpace: null,
+      newTask: { ...defaultTaskConfig },
       taskRules: {
         name: [
           { required: true, message: 'Task name is required', trigger: 'blur' },
         ],
         symbol: [
-          { required: true, message: 'Symbol is required', trigger: 'blur' },
+          { required: true, message: 'Symbol is required', trigger: 'change' },
         ],
         strategy_id: [
           { required: true, message: 'Strategy is required', trigger: 'change' },
@@ -393,6 +468,10 @@ export default {
           { required: true, message: 'Historical range is required', trigger: 'change' },
         ],
       },
+      taskStatusTypes,
+      optimizationTargets,
+      supportedSymbols,
+      supportedTimeframes,
     }
   },
   created() {
@@ -409,11 +488,11 @@ export default {
           params.status = this.statusFilter
         }
         const response = await getOptimizationTasks(params)
-        // 保证 tasks 为数组，无论后端返回什么结构
+        // Convert backend format to frontend format
         this.tasks = Array.isArray(response.data?.tasks)
-          ? response.data.tasks
+          ? response.data.tasks.map(task => convertTaskFromBackendFormat(task))
           : Array.isArray(response.data)
-            ? response.data
+            ? response.data.map(task => convertTaskFromBackendFormat(task))
             : []
       } catch (error) {
         this.tasks = []
@@ -453,38 +532,57 @@ export default {
     },
 
     createNewTask() {
-      this.newTask = {
-        name: '',
-        description: '',
-        symbol: '',
-        strategy_id: '',
-        parameter_space_id: '',
-        timeframe: '1h',
-        historical_range: [],
-        optimization_target: 'profit',
-        max_iterations: 100,
-      }
+      this.newTask = { ...defaultTaskConfig }
+      this.selectedStrategy = null
+      this.selectedParameterSpace = null
       this.createTaskDialog = true
+    },
+
+    onStrategyChange(strategyId) {
+      this.selectedStrategy = this.strategies.find(s => s.id === strategyId)
+    },
+
+    onParameterSpaceChange(parameterSpaceId) {
+      this.selectedParameterSpace = this.parameterSpaces.find(p => p.id === parameterSpaceId)
+    },
+
+    getEnabledParametersCount(parameterSpace) {
+      if (!parameterSpace) return 0
+      let count = 0
+      Object.keys(parameterSpace).forEach(key => {
+        if (key.endsWith('_parameters')) {
+          const parameters = parameterSpace[key] || []
+          count += parameters.filter(param => param.enabled).length
+        }
+      })
+      return count
     },
 
     async saveTask() {
       this.$refs.taskForm.validate(async(valid) => {
         if (valid) {
+          // Additional validation using backend utilities
+          const taskData = {
+            ...this.newTask,
+            start_date: this.newTask.historical_range[0],
+            end_date: this.newTask.historical_range[1]
+          }
+          
+          const errors = validateTaskConfig(taskData)
+          if (errors.length > 0) {
+            this.$message.error(errors.join('\n'))
+            return
+          }
+
           this.saving = true
           try {
-            const taskData = {
-              ...this.newTask,
-              start_date: this.newTask.historical_range[0],
-              end_date: this.newTask.historical_range[1],
-            }
-            delete taskData.historical_range
-
-            await createOptimizationTask(taskData)
-            this.$message.success(this.$t('aiOptimization.taskCreated'))
+            const backendTask = convertTaskToBackendFormat(taskData)
+            await createOptimizationTask(backendTask)
+            this.$message.success('Task created successfully')
             this.createTaskDialog = false
             this.fetchTasks()
           } catch (error) {
-            this.$message.error(this.$t('aiOptimization.taskCreateError'))
+            this.$message.error('Failed to create task')
             console.error(error)
           } finally {
             this.saving = false
@@ -496,26 +594,26 @@ export default {
     async startTask(task) {
       try {
         await startOptimizationTask(task.id)
-        this.$message.success(this.$t('aiOptimization.taskStarted'))
+        this.$message.success('Task started successfully')
         this.fetchTasks()
       } catch (error) {
-        this.$message.error(this.$t('aiOptimization.taskStartError'))
+        this.$message.error('Failed to start task')
         console.error(error)
       }
     },
 
     async stopTask(task) {
-      this.$confirm(this.$t('aiOptimization.confirmStopTask'), 'Warning', {
+      this.$confirm('确定要停止这个任务吗？', 'Warning', {
         confirmButtonText: this.$t('table.confirm'),
         cancelButtonText: this.$t('table.cancel'),
         type: 'warning',
       }).then(async() => {
         try {
           await stopOptimizationTask(task.id)
-          this.$message.success(this.$t('aiOptimization.taskStopped'))
+          this.$message.success('Task stopped successfully')
           this.fetchTasks()
         } catch (error) {
-          this.$message.error(this.$t('aiOptimization.taskStopError'))
+          this.$message.error('Failed to stop task')
           console.error(error)
         }
       })
@@ -544,7 +642,7 @@ export default {
     },
 
     async deleteTask(task) {
-      this.$confirm(this.$t('aiOptimization.confirmDeleteTask'), 'Warning', {
+      this.$confirm('确定要删除这个任务吗？', 'Warning', {
         confirmButtonText: this.$t('table.confirm'),
         cancelButtonText: this.$t('table.cancel'),
         type: 'warning',
@@ -560,37 +658,86 @@ export default {
       })
     },
 
-    viewTask(task) {
-      this.selectedTask = task
-      this.viewTaskDialog = true
+    async viewTask(task) {
+      try {
+        const response = await getOptimizationTask(task.id)
+        this.selectedTask = formatTaskDetails(convertTaskFromBackendFormat(response.data))
+        this.viewTaskDialog = true
+      } catch (error) {
+        this.$message.error('Failed to fetch task details')
+        console.error(error)
+      }
     },
 
     getStatusType(status) {
-      const typeMap = {
-        'pending': 'info',
-        'running': 'success',
-        'paused': 'warning',
-        'completed': 'success',
-        'failed': 'danger',
-        'cancelled': 'info',
-      }
-      return typeMap[status] || 'info'
+      return taskStatusTypes[status]?.type || 'info'
     },
 
     getStatusLabel(status) {
-      const labelMap = {
-        'pending': this.$t('aiOptimization.statusPending'),
-        'running': this.$t('aiOptimization.statusRunning'),
-        'paused': this.$t('aiOptimization.statusPaused'),
-        'completed': this.$t('aiOptimization.statusCompleted'),
-        'failed': this.$t('aiOptimization.statusFailed'),
-        'cancelled': this.$t('aiOptimization.statusCancelled'),
-      }
-      return labelMap[status] || status
+      return taskStatusTypes[status]?.label || status
     },
 
     handleClose(done) {
-      this.$confirm('Are you sure you want to close?')
+      this.$confirm('确定要关闭吗？未保存的修改将丢失。')
+        .then(() => {
+          done()
+        })
+        .catch(() => {})
+    },
+        this.$message.error('Failed to pause task')
+        console.error(error)
+      }
+    },
+
+    async resumeTask(task) {
+      try {
+        await resumeOptimizationTask(task.id)
+        this.$message.success('Task resumed successfully')
+        this.fetchTasks()
+      } catch (error) {
+        this.$message.error('Failed to resume task')
+        console.error(error)
+      }
+    },
+
+    async deleteTask(task) {
+      this.$confirm('确定要删除这个任务吗？', 'Warning', {
+        confirmButtonText: this.$t('table.confirm'),
+        cancelButtonText: this.$t('table.cancel'),
+        type: 'warning',
+      }).then(async() => {
+        try {
+          await deleteOptimizationTask(task.id)
+          this.$message.success('Task deleted successfully')
+          this.fetchTasks()
+        } catch (error) {
+          this.$message.error('Failed to delete task')
+          console.error(error)
+        }
+      })
+    },
+
+    async viewTask(task) {
+      try {
+        const response = await getOptimizationTask(task.id)
+        this.selectedTask = formatTaskDetails(convertTaskFromBackendFormat(response.data))
+        this.viewTaskDialog = true
+      } catch (error) {
+        this.$message.error('Failed to fetch task details')
+        console.error(error)
+      }
+    },
+
+    getStatusType(status) {
+      return taskStatusTypes[status]?.type || 'info'
+    },
+
+    getStatusLabel(status) {
+      return taskStatusTypes[status]?.label || status
+    },
+
+    handleClose(done) {
+      this.$confirm('确定要关闭吗？未保存的修改将丢失。')
         .then(() => {
           done()
         })
@@ -635,5 +782,47 @@ export default {
 
 .dialog-footer {
   text-align: right;
+}
+
+.strategy-preview,
+.parameter-space-preview {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  border-left: 4px solid #409eff;
+}
+
+.strategy-preview h4,
+.parameter-space-preview h4 {
+  margin: 0 0 10px 0;
+  color: #303133;
+}
+
+.strategy-content,
+.parameter-content {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.strategy-content pre {
+  background-color: #2d3748;
+  color: #e2e8f0;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 8px;
+  font-size: 12px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.strategy-content p,
+.parameter-content p {
+  margin: 5px 0;
+}
+
+.strategy-content strong,
+.parameter-content strong {
+  color: #409eff;
 }
 </style>
