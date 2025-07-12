@@ -277,7 +277,7 @@ import {
   stopOptimizationTask,
   pauseOptimizationTask,
   resumeOptimizationTask,
-  getOptimizationTask
+  getOptimizationTask,
 } from '@/api/ai-optimization'
 
 export default {
@@ -296,16 +296,16 @@ export default {
         symbol: 'BTCUSDT',
         timeframe: '1h',
         initial_capital: 10000,
-        description: ''
+        description: '',
       },
       taskRules: {
         name: [
-          { required: true, message: 'Task name is required', trigger: 'blur' }
+          { required: true, message: 'Task name is required', trigger: 'blur' },
         ],
         symbol: [
-          { required: true, message: 'Symbol is required', trigger: 'change' }
-        ]
-      }
+          { required: true, message: 'Symbol is required', trigger: 'change' },
+        ],
+      },
     }
   },
   created() {
@@ -340,7 +340,7 @@ export default {
         symbol: 'BTCUSDT',
         timeframe: '1h',
         initial_capital: 10000,
-        description: ''
+        description: '',
       }
       this.createTaskDialog = true
     },
@@ -379,7 +379,7 @@ export default {
       this.$confirm('Are you sure you want to stop this task?', 'Warning', {
         confirmButtonText: 'Confirm',
         cancelButtonText: 'Cancel',
-        type: 'warning'
+        type: 'warning',
       }).then(async() => {
         try {
           await stopOptimizationTask(task.id)
@@ -418,7 +418,7 @@ export default {
       this.$confirm('Are you sure you want to delete this task?', 'Warning', {
         confirmButtonText: 'Confirm',
         cancelButtonText: 'Cancel',
-        type: 'warning'
+        type: 'warning',
       }).then(async() => {
         try {
           await deleteOptimizationTask(task.id)
@@ -449,7 +449,7 @@ export default {
         'paused': 'warning',
         'completed': 'success',
         'failed': 'danger',
-        'cancelled': 'info'
+        'cancelled': 'info',
       }
       return typeMap[status] || 'info'
     },
@@ -461,7 +461,7 @@ export default {
         'paused': 'Paused',
         'completed': 'Completed',
         'failed': 'Failed',
-        'cancelled': 'Cancelled'
+        'cancelled': 'Cancelled',
       }
       return labelMap[status] || status
     },
@@ -480,8 +480,8 @@ export default {
           done()
         })
         .catch(() => {})
-    }
-  }
+    },
+  },
 }
 </script>
 

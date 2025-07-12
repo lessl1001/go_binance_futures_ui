@@ -160,19 +160,19 @@ export default {
       currentParameterSpace: {
         name: '',
         description: '',
-        optimization_target: 'profit'
+        optimization_target: 'profit',
       },
       editorDialog: false,
       viewDialog: false,
       isEdit: false,
       rules: {
         name: [
-          { required: true, message: 'Parameter space name is required', trigger: 'blur' }
+          { required: true, message: 'Parameter space name is required', trigger: 'blur' },
         ],
         optimization_target: [
-          { required: true, message: 'Optimization target is required', trigger: 'blur' }
-        ]
-      }
+          { required: true, message: 'Optimization target is required', trigger: 'blur' },
+        ],
+      },
     }
   },
   created() {
@@ -201,7 +201,7 @@ export default {
       this.currentParameterSpace = {
         name: '',
         description: '',
-        optimization_target: 'profit'
+        optimization_target: 'profit',
       }
       this.isEdit = false
       this.editorDialog = true
@@ -223,7 +223,7 @@ export default {
             } else {
               await saveParameterSpace(this.currentParameterSpace)
             }
-            
+
             this.$message.success('Parameter space saved successfully')
             this.editorDialog = false
             this.fetchParameterSpaces()
@@ -241,7 +241,7 @@ export default {
       this.$confirm('Are you sure you want to delete this parameter space?', 'Warning', {
         confirmButtonText: 'Confirm',
         cancelButtonText: 'Cancel',
-        type: 'warning'
+        type: 'warning',
       }).then(async() => {
         try {
           await deleteParameterSpace(parameterSpace.id)
@@ -264,8 +264,8 @@ export default {
           done()
         })
         .catch(() => {})
-    }
-  }
+    },
+  },
 }
 </script>
 
