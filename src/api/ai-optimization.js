@@ -21,7 +21,7 @@ export function saveStrategyTemplate(data) {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }
-  
+
   return request({
     url: '/api/deploy_strategy',
     method: 'post',
@@ -37,7 +37,7 @@ export function updateStrategyTemplate(id, data) {
     type: data.type || 'strategy',
     updated_at: new Date().toISOString(),
   }
-  
+
   return request({
     url: `/api/deploy_strategy/${id}`,
     method: 'put',
@@ -57,9 +57,9 @@ export function validateStrategyExpression(data) {
   const validationData = {
     expression: data.expression,
     category: data.category || 'Long',
-    context: data.context || 'strategy_editor'
+    context: data.context || 'strategy_editor',
   }
-  
+
   return request({
     url: '/api/deploy_strategy/validate',
     method: 'post',
@@ -67,16 +67,15 @@ export function validateStrategyExpression(data) {
     timeout: 10000, // 10 second timeout for validation
   }).catch(error => {
     // Enhanced error handling
-    const errorMessage = error.response?.data?.message || 
-                        error.response?.data?.error || 
-                        error.message || 
+    const errorMessage = error.response?.data?.message ||
+                        error.response?.data?.error ||
+                        error.message ||
                         'Strategy validation failed'
-    
-    throw {
-      ...error,
-      message: errorMessage,
-      validationError: true
-    }
+
+    const validationError = new Error(errorMessage)
+    validationError.originalError = error
+    validationError.validationError = true
+    throw validationError
   })
 }
 
