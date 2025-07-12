@@ -61,6 +61,42 @@
         </el-row>
       </el-card>
 
+      <!-- Strategy Information Section -->
+      <el-row :gutter="20" style="margin-top: 20px;">
+        <el-col :span="24">
+          <el-card shadow="hover">
+            <div slot="header" class="clearfix">
+              <span>策略信息</span>
+            </div>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <div class="strategy-info">
+                  <h4>策略表达式</h4>
+                  <pre class="strategy-expression">{{ formatStrategyExpression(taskInfo.strategy_expression) }}</pre>
+                </div>
+              </el-col>
+              <el-col :span="12">
+                <div class="parameter-info">
+                  <h4>启用参数 ({{ taskInfo.enabled_parameters ? taskInfo.enabled_parameters.length : 0 }})</h4>
+                  <el-table
+                    :data="formatParameterDetails(taskInfo.enabled_parameters)"
+                    size="small"
+                    stripe
+                    max-height="200"
+                  >
+                    <el-table-column prop="name" label="参数名" width="120" />
+                    <el-table-column prop="type" label="类型" width="80" />
+                    <el-table-column prop="current_value" label="当前值" width="80" />
+                    <el-table-column prop="best_value" label="最优值" width="80" />
+                    <el-table-column prop="variation" label="变化率" width="80" />
+                  </el-table>
+                </div>
+              </el-col>
+            </el-row>
+          </el-card>
+        </el-col>
+      </el-row>
+
       <!-- Parameters Section -->
       <el-row :gutter="20" style="margin-top: 20px;">
         <el-col :span="12">
@@ -227,6 +263,17 @@ import {
   stopOptimizationTask,
 } from '@/api/ai-optimization'
 import VueApexCharts from 'vue-apexcharts'
+import { 
+  formatMonitoringData, 
+  chartConfigs, 
+  generateParameterHeatmap, 
+  formatStrategyExpression, 
+  formatParameterDetails, 
+  formatLogEntry, 
+  getRefreshInterval, 
+  evaluatePerformance 
+} from '@/utils/backend-optimization-monitor'
+import { convertTaskFromBackendFormat } from '@/utils/backend-task-management'
 
 export default {
   name: 'OptimizationMonitor',
@@ -246,11 +293,18 @@ export default {
         elapsed_time: '',
         iteration_count: 0,
         best_objective_value: 0,
+        strategy_expression: '',
+        enabled_parameters: [],
+        optimization_target: 'profit'
       },
       currentParameters: [],
       bestParameters: [],
       selectedParameter1: '',
       selectedParameter2: '',
+      monitoringData: null,
+      performanceEvaluation: null,
+      formatStrategyExpression,
+      formatParameterDetails,
       availableParameters: [],
 
       // Chart options
@@ -368,7 +422,12 @@ export default {
     async fetchTaskInfo() {
       try {
         const response = await getOptimizationTask(this.taskId)
-        this.taskInfo = response.data
+        const taskData = convertTaskFromBackendFormat(response.data)
+        this.taskInfo = {
+          ...taskData,
+          strategy_expression: taskData.strategy_expression || '',
+          enabled_parameters: taskData.enabled_parameters || []
+        }
       } catch (error) {
         this.$message.error('Failed to fetch task info')
         console.error(error)
@@ -383,6 +442,23 @@ export default {
           this.fetchTaskMetrics(),
           this.fetchTaskHeatmap(),
         ])
+        
+        // Update monitoring data format
+        this.monitoringData = formatMonitoringData({
+          task_info: this.taskInfo,
+          optimization_progress: {
+            current_iteration: this.taskInfo.current_iteration,
+            best_objective_value: this.taskInfo.best_objective_value,
+          },
+          current_parameters: this.currentParameters,
+          best_parameters: this.bestParameters
+        })
+        
+        // Evaluate performance
+        if (this.taskInfo.performance_metrics) {
+          this.performanceEvaluation = evaluatePerformance(this.taskInfo.performance_metrics)
+        }
+        
       } catch (error) {
         console.error('Error refreshing data:', error)
       } finally {
@@ -394,6 +470,28 @@ export default {
       try {
         const response = await getTaskProgress(this.taskId)
         const data = response.data
+        
+        // Update task info with backend format
+        this.taskInfo.progress = data.progress
+        this.taskInfo.current_iteration = data.current_iteration
+        this.taskInfo.best_objective_value = data.best_objective_value
+        this.taskInfo.elapsed_time = data.elapsed_time
+        
+        // Update parameters in backend format
+        this.currentParameters = Object.entries(data.current_parameters || {}).map(([name, value]) => ({
+          name,
+          value: typeof value === 'number' ? value.toFixed(4) : value
+        }))
+        
+        this.bestParameters = Object.entries(data.best_parameters || {}).map(([name, value]) => ({
+          name,
+          value: typeof value === 'number' ? value.toFixed(4) : value
+        }))
+        
+      } catch (error) {
+        console.error('Error fetching task progress:', error)
+      }
+    },
 
         this.taskInfo.progress = data.progress
         this.taskInfo.elapsed_time = data.elapsed_time
@@ -524,11 +622,13 @@ export default {
     },
 
     startAutoRefresh() {
+      // Use backend-compatible refresh interval based on task status
+      const interval = getRefreshInterval(this.taskInfo.status)
       this.refreshInterval = setInterval(() => {
-        if (this.taskInfo.status === 'running') {
+        if (this.taskInfo.status === 'running' || this.taskInfo.status === 'paused') {
           this.refreshData()
         }
-      }, 5000) // Refresh every 5 seconds
+      }, interval)
     },
 
     stopAutoRefresh() {
@@ -620,6 +720,31 @@ export default {
   padding: 20px;
   background-color: #f5f7fa;
   border-radius: 4px;
+}
+
+.strategy-info,
+.parameter-info {
+  margin-bottom: 20px;
+}
+
+.strategy-info h4,
+.parameter-info h4 {
+  margin: 0 0 10px 0;
+  color: #303133;
+  font-size: 16px;
+}
+
+.strategy-expression {
+  background-color: #2d3748;
+  color: #e2e8f0;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  margin: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 
 .clearfix::after {
