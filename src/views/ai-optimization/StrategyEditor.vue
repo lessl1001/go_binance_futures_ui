@@ -307,8 +307,14 @@ function strategy(data, params) {
       this.loading = true
       try {
         const response = await getStrategyTemplates()
-        this.strategyTemplates = response.data || []
+        // 兼容后端返回字段为数组或对象
+        this.strategyTemplates = Array.isArray(response.data?.strategy_templates)
+          ? response.data.strategy_templates
+          : Array.isArray(response.data)
+            ? response.data
+            : []
       } catch (error) {
+        this.strategyTemplates = []
         this.$message.error('Failed to fetch strategy templates')
         console.error(error)
       } finally {
