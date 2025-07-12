@@ -1,28 +1,47 @@
 import request from '@/utils/request'
 
 // Strategy & Parameter Space APIs
-// Updated to use new API endpoints as per API specification
+// Updated to use new unified API endpoints
 export function getStrategyTemplates(query = {}) {
   return request({
-    url: '/api/deploy_strategy', // Updated from /ai-optimization/strategy-templates
+    url: '/api/deploy_strategy',
     method: 'get',
     params: query,
   })
 }
 
 export function saveStrategyTemplate(data) {
+  // Ensure unified data structure
+  const unifiedData = {
+    name: data.name,
+    description: data.description,
+    expression: data.expression,
+    category: data.category || 'Long', // Default category if not provided
+    type: data.type || 'strategy', // Mark as strategy type
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+  
   return request({
-    url: '/api/deploy_strategy', // Updated from /ai-optimization/strategy-templates
+    url: '/api/deploy_strategy',
     method: 'post',
-    data,
+    data: unifiedData,
   })
 }
 
 export function updateStrategyTemplate(id, data) {
+  // Ensure unified data structure
+  const unifiedData = {
+    ...data,
+    category: data.category || 'Long',
+    type: data.type || 'strategy',
+    updated_at: new Date().toISOString(),
+  }
+  
   return request({
-    url: `/api/deploy_strategy/${id}`, // Updated from /ai-optimization/strategy-templates/${id}
+    url: `/api/deploy_strategy/${id}`,
     method: 'put',
-    data,
+    data: unifiedData,
   })
 }
 
@@ -34,10 +53,30 @@ export function deleteStrategyTemplate(id) {
 }
 
 export function validateStrategyExpression(data) {
+  // Enhanced validation with better error handling
+  const validationData = {
+    expression: data.expression,
+    category: data.category || 'Long',
+    context: data.context || 'strategy_editor'
+  }
+  
   return request({
-    url: '/api/deploy_strategy/validate', // Updated from /ai-optimization/strategy-templates/validate
+    url: '/api/deploy_strategy/validate',
     method: 'post',
-    data,
+    data: validationData,
+    timeout: 10000, // 10 second timeout for validation
+  }).catch(error => {
+    // Enhanced error handling
+    const errorMessage = error.response?.data?.message || 
+                        error.response?.data?.error || 
+                        error.message || 
+                        'Strategy validation failed'
+    
+    throw {
+      ...error,
+      message: errorMessage,
+      validationError: true
+    }
   })
 }
 
