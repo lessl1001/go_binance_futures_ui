@@ -17,9 +17,8 @@ service.interceptors.request.use(
 
     if (store.getters.token) {
       // let each request carry token
-      // ['X-Token'] is a custom headers key
-      // please modify it according to the actual situation
-      config.headers['Authorization'] = getToken()
+      // Use Authorization: Bearer token format for API authentication
+      config.headers['Authorization'] = `Bearer ${getToken()}`
     }
     return config
   },
@@ -77,6 +76,9 @@ service.interceptors.response.use(
   },
   error => {
     const statusCode = error.response?.status
+    const errorData = error.response?.data
+    
+    // Handle different HTTP status codes
     if (statusCode === 401) {
       MessageBox.confirm('You have been logged out, you can cancel to stay on this page, or log in again', 'Confirm logout', {
         confirmButtonText: 'Re-Login',
@@ -89,12 +91,43 @@ service.interceptors.response.use(
       })
       return
     }
+    
+    // Handle 404 errors (endpoint not found)
+    if (statusCode === 404) {
+      Notification({
+        title: 'API Error',
+        message: 'The requested resource was not found. Please check if the API endpoint is available.',
+        type: 'error',
+        position: 'top-right',
+        duration: 5000
+      })
+      return Promise.reject(error)
+    }
+    
+    // Handle 500 errors (server errors)
+    if (statusCode >= 500) {
+      Notification({
+        title: 'Server Error',
+        message: errorData?.message || 'Internal server error. Please try again later.',
+        type: 'error',
+        position: 'top-right',
+        duration: 5000
+      })
+      return Promise.reject(error)
+    }
+    
+    // Handle other API errors with proper error messages
+    if (errorData?.message || errorData?.msg) {
+      Notification({
+        title: 'API Error',
+        message: errorData.message || errorData.msg,
+        type: 'error',
+        position: 'top-right',
+        duration: 5000
+      })
+    }
+    
     console.log('err' + error) // for debug
-    // Message({
-    //   message: error.msg,
-    //   type: 'error',
-    //   duration: 5 * 1000
-    // })
     return Promise.reject(error)
   },
 )
