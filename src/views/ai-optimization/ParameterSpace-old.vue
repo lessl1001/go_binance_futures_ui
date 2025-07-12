@@ -328,14 +328,14 @@
 
 <script>
 import { getParameterSpaces, saveParameterSpace, updateParameterSpace, deleteParameterSpace } from '@/api/ai-optimization'
-import { 
-  technicalIndicators, 
-  klineIntervals, 
-  defaultParameterSpace, 
-  createNewParameter, 
-  validateParameterSpace, 
-  convertToBackendFormat, 
-  convertFromBackendFormat 
+import {
+  technicalIndicators,
+  klineIntervals,
+  defaultParameterSpace,
+  createNewParameter,
+  validateParameterSpace,
+  convertToBackendFormat,
+  convertFromBackendFormat,
 } from '@/utils/backend-parameter-space'
 
 export default {

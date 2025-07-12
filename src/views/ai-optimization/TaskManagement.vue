@@ -376,14 +376,14 @@
             <el-button
               v-if="selectedTask.status === 'running'"
               type="primary"
-              @click="$router.push(`/ai-optimization/optimization-monitor?taskId=${selectedTask.id}`)"
+              @click="goToOptimizationMonitor(selectedTask.id)"
             >
               {{ $t('aiOptimization.optimizationMonitor') }}
             </el-button>
             <el-button
               v-if="selectedTask.status === 'completed'"
               type="success"
-              @click="$router.push(`/ai-optimization/live-deployment?taskId=${selectedTask.id}`)"
+              @click="goToLiveDeployment(selectedTask.id)"
             >
               {{ $t('aiOptimization.liveDeployment') }}
             </el-button>
@@ -403,12 +403,12 @@ import {
   stopOptimizationTask,
   pauseOptimizationTask,
   resumeOptimizationTask,
-  getOptimizationTask
+  getOptimizationTask,
 } from '@/api/ai-optimization'
 import { getStrategyTemplates } from '@/api/ai-optimization'
 import { getParameterSpaces } from '@/api/ai-optimization'
-import { 
-  taskStatusTypes, 
+import {
+  taskStatusTypes,
   optimizationTargets,
   defaultTaskConfig,
   convertTaskToBackendFormat,
@@ -417,7 +417,7 @@ import {
   formatTaskDetails,
   generateTaskSummary,
   supportedSymbols,
-  supportedTimeframes
+  supportedTimeframes,
 } from '@/utils/backend-task-management'
 
 export default {
@@ -550,9 +550,9 @@ export default {
           const taskData = {
             ...this.newTask,
             start_date: this.newTask.historical_range[0],
-            end_date: this.newTask.historical_range[1]
+            end_date: this.newTask.historical_range[1],
           }
-          
+
           const errors = validateTaskConfig(taskData)
           if (errors.length > 0) {
             this.$message.error(errors.join('\n'))
@@ -660,6 +660,14 @@ export default {
 
     getStatusLabel(status) {
       return taskStatusTypes[status]?.label || status
+    },
+
+    goToOptimizationMonitor(taskId) {
+      this.$router.push(`/ai-optimization/optimization-monitor?taskId=${taskId}`)
+    },
+
+    goToLiveDeployment(taskId) {
+      this.$router.push(`/ai-optimization/live-deployment?taskId=${taskId}`)
     },
 
     handleClose(done) {

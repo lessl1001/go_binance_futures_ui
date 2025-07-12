@@ -160,8 +160,8 @@
               <el-table
                 :data="filteredTemplates"
                 highlight-current-row
-                @row-click="selectTemplate"
                 style="width: 100%"
+                @row-click="selectTemplate"
               >
                 <el-table-column prop="name" label="策略名称" width="200" />
                 <el-table-column prop="description" label="策略描述" show-overflow-tooltip />
@@ -172,8 +172,8 @@
               <el-table
                 :data="filteredTemplates"
                 highlight-current-row
-                @row-click="selectTemplate"
                 style="width: 100%"
+                @row-click="selectTemplate"
               >
                 <el-table-column prop="name" label="策略名称" width="200" />
                 <el-table-column prop="description" label="策略描述" show-overflow-tooltip />
@@ -184,8 +184,8 @@
               <el-table
                 :data="filteredTemplates"
                 highlight-current-row
-                @row-click="selectTemplate"
                 style="width: 100%"
+                @row-click="selectTemplate"
               >
                 <el-table-column prop="name" label="策略名称" width="200" />
                 <el-table-column prop="description" label="策略描述" show-overflow-tooltip />
@@ -196,8 +196,8 @@
               <el-table
                 :data="filteredTemplates"
                 highlight-current-row
-                @row-click="selectTemplate"
                 style="width: 100%"
+                @row-click="selectTemplate"
               >
                 <el-table-column prop="name" label="策略名称" width="200" />
                 <el-table-column prop="description" label="策略描述" show-overflow-tooltip />
@@ -255,13 +255,13 @@ ema_4h_3.Data[0] // 当前时刻的EMA值
 ema_4h_3.Data[1] // 前一时刻的EMA值
 ema_4h_3.KlineInterval // K线周期 "4h"
 ema_4h_3.Period // 周期参数 3</code></pre>
-                  
+
                   <h5>MACD指标示例</h5>
                   <pre><code>// 假设参数空间中定义了macd_4h_12_26_9
 macd_4h_12_26_9.MACD[0] // 当前时刻的MACD值
 macd_4h_12_26_9.Signal[0] // 当前时刻的信号线值
 macd_4h_12_26_9.Histogram[0] // 当前时刻的柱状图值</code></pre>
-                  
+
                   <h5>K线数据示例</h5>
                   <pre><code>// 当定义了任意4h周期指标时，会自动生成kline_4h
 kline_4h.Close[0] // 当前收盘价
@@ -277,16 +277,16 @@ kline_4h.Amount[0] // 当前成交额</code></pre>
                 <div class="example-code">
                   <h5>简单EMA金叉策略</h5>
                   <pre><code>ema_4h_3.Data[0] > ema_4h_7.Data[0] && ema_4h_3.Data[1] < ema_4h_7.Data[1]</code></pre>
-                  
+
                   <h5>RSI超卖策略</h5>
                   <pre><code>rsi_1h_14.Data[0] < 30 && rsi_1h_14.Data[1] >= 30</code></pre>
-                  
+
                   <h5>多条件组合策略</h5>
-                  <pre><code>ema_4h_3.Data[0] > ema_4h_7.Data[0] && 
-rsi_1h_14.Data[0] > 40 && rsi_1h_14.Data[0] < 60 && 
-BasicTrend > 0 && 
+                  <pre><code>ema_4h_3.Data[0] > ema_4h_7.Data[0] &&
+rsi_1h_14.Data[0] > 40 && rsi_1h_14.Data[0] < 60 &&
+BasicTrend > 0 &&
 BTCUSDT.PercentChange > 0</code></pre>
-                  
+
                   <h5>止盈止损策略</h5>
                   <pre><code>// 止盈
 Position.Side == "LONG" && ORI > 5.0
@@ -515,15 +515,15 @@ export default {
       const line = cm.getLine(cursor.line)
       const start = cursor.ch
       const end = cursor.ch
-      
+
       // Get current word being typed
       const wordStart = line.substring(0, start).match(/\w*$/)
       const wordEnd = line.substring(end).match(/^\w*/)
       const word = (wordStart ? wordStart[0] : '') + (wordEnd ? wordEnd[0] : '')
-      
+
       // Filter suggestions based on current word
       const suggestions = []
-      
+
       // Add variables
       this.systemVariables.forEach(variable => {
         if (variable.name.toLowerCase().includes(word.toLowerCase())) {
@@ -534,7 +534,7 @@ export default {
           })
         }
       })
-      
+
       // Add functions
       this.systemFunctions.forEach(func => {
         if (func.name.toLowerCase().includes(word.toLowerCase())) {
@@ -545,15 +545,15 @@ export default {
           })
         }
       })
-      
+
       // Add common patterns
       const patterns = [
         'Data[0]', 'Data[1]', 'MACD[0]', 'Signal[0]', 'Histogram[0]',
         'High[0]', 'Low[0]', 'Mid[0]', 'Close[0]', 'Open[0]', 'Amount[0]',
         'PercentChange', 'Position.Side', 'Position.Amount', 'ORI',
-        'BasicTrend', 'NowPrice', 'NowTime'
+        'BasicTrend', 'NowPrice', 'NowTime',
       ]
-      
+
       patterns.forEach(pattern => {
         if (pattern.toLowerCase().includes(word.toLowerCase())) {
           suggestions.push({
@@ -562,7 +562,7 @@ export default {
           })
         }
       })
-      
+
       return {
         list: suggestions,
         from: { line: cursor.line, ch: start - (wordStart ? wordStart[0].length : 0) },

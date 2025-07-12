@@ -137,12 +137,12 @@
         <div class="indicators-section">
           <h4>技术指标参数配置</h4>
           <p class="help-text">配置技术指标参数，只有启用的参数才能在策略中使用。参数名称必须在所有指标中保持唯一。</p>
-          
+
           <el-tabs v-model="activeIndicator" @tab-click="handleIndicatorChange">
-            <el-tab-pane 
-              v-for="(indicator, key) in technicalIndicators" 
+            <el-tab-pane
+              v-for="(indicator, key) in technicalIndicators"
               :key="key"
-              :label="indicator.label" 
+              :label="indicator.label"
               :name="key"
             >
               <div class="indicator-config">
@@ -157,15 +157,15 @@
                     添加 {{ indicator.label }}
                   </el-button>
                 </div>
-                
-                <el-table 
-                  :data="currentParameterSpace[`${key}_parameters`] || []"
+
+                <el-table
+                  :data="getIndicatorParameters(key)"
                   size="small"
                   border
                   style="width: 100%"
                 >
-                  <el-table-column 
-                    v-for="field in indicator.fields" 
+                  <el-table-column
+                    v-for="field in indicator.fields"
                     :key="field.name"
                     :prop="field.name"
                     :label="field.label"
@@ -290,14 +290,14 @@
 
 <script>
 import { getParameterSpaces, saveParameterSpace, updateParameterSpace, deleteParameterSpace } from '@/api/ai-optimization'
-import { 
-  technicalIndicators, 
-  klineIntervals, 
-  defaultParameterSpace, 
-  createNewParameter, 
-  validateParameterSpace, 
-  convertToBackendFormat, 
-  convertFromBackendFormat 
+import {
+  technicalIndicators,
+  klineIntervals,
+  defaultParameterSpace,
+  createNewParameter,
+  validateParameterSpace,
+  convertToBackendFormat,
+  convertFromBackendFormat,
 } from '@/utils/backend-parameter-space'
 
 export default {
@@ -376,13 +376,13 @@ export default {
           this.saving = true
           try {
             const backendData = convertToBackendFormat(this.currentParameterSpace)
-            
+
             if (this.isEdit) {
               await updateParameterSpace(this.currentParameterSpace.id, backendData)
             } else {
               await saveParameterSpace(backendData)
             }
-            
+
             this.$message.success('参数空间保存成功')
             this.editorDialog = false
             this.fetchParameterSpaces()
@@ -415,7 +415,7 @@ export default {
 
     viewParameters(parameterSpace) {
       this.viewingParametersByType = {}
-      
+
       // Group parameters by indicator type
       Object.keys(this.technicalIndicators).forEach(indicatorType => {
         const parameters = parameterSpace[`${indicatorType}_parameters`] || []
@@ -423,7 +423,7 @@ export default {
           this.viewingParametersByType[indicatorType] = parameters
         }
       })
-      
+
       this.viewDialog = true
     },
 
@@ -448,7 +448,7 @@ export default {
     validateParameters() {
       const errors = validateParameterSpace(this.currentParameterSpace)
       this.validationErrors = errors
-      
+
       if (errors.length === 0) {
         this.$message.success('参数验证通过')
       } else {
@@ -468,11 +468,15 @@ export default {
             }
           })
         })
-        
+
         if (allNames.includes(parameter.name)) {
           this.$message.warning(`参数名称 "${parameter.name}" 已存在，请使用唯一的名称`)
         }
       }
+    },
+
+    getIndicatorParameters(indicatorType) {
+      return this.currentParameterSpace[`${indicatorType}_parameters`] || []
     },
 
     getColumnWidth(field) {
