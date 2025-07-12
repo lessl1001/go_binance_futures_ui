@@ -409,8 +409,14 @@ export default {
           params.status = this.statusFilter
         }
         const response = await getOptimizationTasks(params)
-        this.tasks = response.data || []
+        // 保证 tasks 为数组，无论后端返回什么结构
+        this.tasks = Array.isArray(response.data?.tasks)
+          ? response.data.tasks
+          : Array.isArray(response.data)
+            ? response.data
+            : []
       } catch (error) {
+        this.tasks = []
         this.$message.error('Failed to fetch tasks')
         console.error(error)
       } finally {
@@ -421,8 +427,13 @@ export default {
     async fetchStrategies() {
       try {
         const response = await getStrategyTemplates()
-        this.strategies = response.data || []
+        this.strategies = Array.isArray(response.data?.strategy_templates)
+          ? response.data.strategy_templates
+          : Array.isArray(response.data)
+            ? response.data
+            : []
       } catch (error) {
+        this.strategies = []
         console.error('Failed to fetch strategies:', error)
       }
     },
@@ -430,8 +441,13 @@ export default {
     async fetchParameterSpaces() {
       try {
         const response = await getParameterSpaces()
-        this.parameterSpaces = response.data || []
+        this.parameterSpaces = Array.isArray(response.data?.parameter_spaces)
+          ? response.data.parameter_spaces
+          : Array.isArray(response.data)
+            ? response.data
+            : []
       } catch (error) {
+        this.parameterSpaces = []
         console.error('Failed to fetch parameter spaces:', error)
       }
     },
