@@ -425,12 +425,23 @@ export default {
     },
 
     async fetchLiveDeployments() {
+      this.loading = true
       try {
-        // In a real implementation, this would fetch all deployments
-        // For now, we'll simulate with empty data
-        this.liveDeployments = []
+        // 强制保证 liveDeployments 为数组，不管接口返回啥结构
+        const response = await this.$axios.get('/api/deploy_strategy')
+        // 你可以用 console.log(response.data) 查看真实结构
+        // 假如后端返回 { deployments: [...] }
+        this.liveDeployments = Array.isArray(response.data?.deployments)
+          ? response.data.deployments
+          : Array.isArray(response.data)
+            ? response.data
+            : []
       } catch (error) {
+        this.liveDeployments = []
+        this.$message.error('Failed to fetch live deployments')
         console.error('Failed to fetch live deployments:', error)
+      } finally {
+        this.loading = false
       }
     },
 
