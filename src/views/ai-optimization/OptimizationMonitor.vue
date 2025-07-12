@@ -492,11 +492,7 @@ export default {
         console.error('Error fetching task progress:', error)
       }
     },
-      } catch (error) {
-        console.error('Failed to fetch task progress:', error)
-      }
-    },
-
+   
     async fetchTaskMetrics() {
       try {
         const response = await getTaskMetrics(this.taskId)
