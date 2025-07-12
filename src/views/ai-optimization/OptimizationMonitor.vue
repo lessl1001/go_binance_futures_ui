@@ -263,15 +263,12 @@ import {
   stopOptimizationTask,
 } from '@/api/ai-optimization'
 import VueApexCharts from 'vue-apexcharts'
-import { 
-  formatMonitoringData, 
-  chartConfigs, 
-  generateParameterHeatmap, 
-  formatStrategyExpression, 
-  formatParameterDetails, 
-  formatLogEntry, 
-  getRefreshInterval, 
-  evaluatePerformance 
+import {
+  formatMonitoringData,
+  formatStrategyExpression,
+  formatParameterDetails,
+  getRefreshInterval,
+  evaluatePerformance,
 } from '@/utils/backend-optimization-monitor'
 import { convertTaskFromBackendFormat } from '@/utils/backend-task-management'
 
@@ -295,7 +292,7 @@ export default {
         best_objective_value: 0,
         strategy_expression: '',
         enabled_parameters: [],
-        optimization_target: 'profit'
+        optimization_target: 'profit',
       },
       currentParameters: [],
       bestParameters: [],
@@ -426,7 +423,7 @@ export default {
         this.taskInfo = {
           ...taskData,
           strategy_expression: taskData.strategy_expression || '',
-          enabled_parameters: taskData.enabled_parameters || []
+          enabled_parameters: taskData.enabled_parameters || [],
         }
       } catch (error) {
         this.$message.error('Failed to fetch task info')
@@ -442,7 +439,7 @@ export default {
           this.fetchTaskMetrics(),
           this.fetchTaskHeatmap(),
         ])
-        
+
         // Update monitoring data format
         this.monitoringData = formatMonitoringData({
           task_info: this.taskInfo,
@@ -451,14 +448,13 @@ export default {
             best_objective_value: this.taskInfo.best_objective_value,
           },
           current_parameters: this.currentParameters,
-          best_parameters: this.bestParameters
+          best_parameters: this.bestParameters,
         })
-        
+
         // Evaluate performance
         if (this.taskInfo.performance_metrics) {
           this.performanceEvaluation = evaluatePerformance(this.taskInfo.performance_metrics)
         }
-        
       } catch (error) {
         console.error('Error refreshing data:', error)
       } finally {
@@ -470,24 +466,23 @@ export default {
       try {
         const response = await getTaskProgress(this.taskId)
         const data = response.data
-        
+
         // Update task info with backend format
         this.taskInfo.progress = data.progress
         this.taskInfo.current_iteration = data.current_iteration
         this.taskInfo.best_objective_value = data.best_objective_value
         this.taskInfo.elapsed_time = data.elapsed_time
-        
+
         // Update parameters in backend format
         this.currentParameters = Object.entries(data.current_parameters || {}).map(([name, value]) => ({
           name,
-          value: typeof value === 'number' ? value.toFixed(4) : value
+          value: typeof value === 'number' ? value.toFixed(4) : value,
         }))
-        
+
         this.bestParameters = Object.entries(data.best_parameters || {}).map(([name, value]) => ({
           name,
-          value: typeof value === 'number' ? value.toFixed(4) : value
+          value: typeof value === 'number' ? value.toFixed(4) : value,
         }))
-        
       } catch (error) {
         console.error('Error fetching task progress:', error)
       }
