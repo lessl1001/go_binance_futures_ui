@@ -18,7 +18,7 @@ service.interceptors.request.use(
     if (store.getters.token) {
       // let each request carry token
       // Use Authorization: Bearer token format for API authentication
-      config.headers['Authorization'] = `Bearer ${getToken()}`
+      config.headers['Authorization'] = `${getToken()}`
     }
     return config
   },
