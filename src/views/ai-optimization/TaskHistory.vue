@@ -225,6 +225,12 @@
             </el-descriptions-item>
           </el-descriptions>
 
+          <!-- Strategy Expression -->
+          <div style="margin-top: 20px;" v-if="selectedTask.strategy_expression">
+            <h4>策略表达式</h4>
+            <pre class="strategy-expression">{{ formatStrategyExpression(selectedTask.strategy_expression) }}</pre>
+          </div>
+
           <!-- Best Parameters -->
           <div style="margin-top: 20px;">
             <h4>{{ $t('aiOptimization.bestParameters') }}</h4>
@@ -342,6 +348,13 @@ import {
   exportTaskResults,
   exportTaskReport,
 } from '@/api/ai-optimization'
+import { 
+  convertTaskFromBackendFormat, 
+  formatTaskDetails, 
+  taskStatusTypes, 
+  optimizationTargets 
+} from '@/utils/backend-task-management'
+import { formatStrategyExpression } from '@/utils/backend-optimization-monitor'
 
 export default {
   name: 'TaskHistory',
@@ -366,6 +379,9 @@ export default {
         size: 20,
         total: 0,
       },
+      taskStatusTypes,
+      optimizationTargets,
+      formatStrategyExpression,
     }
   },
   created() {
@@ -387,11 +403,11 @@ export default {
         }
 
         const response = await getHistoricalTasks(params)
-        // 兼容后端结构，保证 historicalTasks 为数组
+        // Convert backend format to frontend format
         this.historicalTasks = Array.isArray(response.data?.results)
-          ? response.data.results
+          ? response.data.results.map(task => formatTaskDetails(convertTaskFromBackendFormat(task)))
           : Array.isArray(response.data)
-            ? response.data
+            ? response.data.map(task => formatTaskDetails(convertTaskFromBackendFormat(task)))
             : []
         this.pagination.total = response.data.total || 0
       } catch (error) {
@@ -410,6 +426,15 @@ export default {
       try {
         const response = await getTaskResults(task.id)
         const data = response.data
+        
+        // Format strategy expression for display
+        this.selectedTask.formatted_strategy_expression = formatStrategyExpression(task.strategy_expression)
+        
+        // Add result details
+        this.selectedTask.result_details = {
+          ...data,
+          formatted_objective_value: optimizationTargets[task.optimization_target]?.format(data.best_objective_value) || data.best_objective_value
+        }
 
         // Update best parameters
         this.taskBestParameters = Object.entries(data.best_parameters || {}).map(([key, value]) => ({
@@ -608,6 +633,19 @@ export default {
   font-size: 18px;
   font-weight: bold;
   color: #303133;
+}
+
+.strategy-expression {
+  background-color: #2d3748;
+  color: #e2e8f0;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  margin: 10px 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 
 .profit {
