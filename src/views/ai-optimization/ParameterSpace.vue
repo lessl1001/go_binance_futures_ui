@@ -364,8 +364,14 @@ export default {
       this.loading = true
       try {
         const response = await getParameterSpaces()
-        this.parameterSpaces = response.data || []
+        // 兼容后端返回的数组字段，保证表格数据为数组
+        this.parameterSpaces = Array.isArray(response.data?.parameter_spaces)
+          ? response.data.parameter_spaces
+          : Array.isArray(response.data)
+            ? response.data
+            : []
       } catch (error) {
+        this.parameterSpaces = []
         this.$message.error('Failed to fetch parameter spaces')
         console.error(error)
       } finally {
