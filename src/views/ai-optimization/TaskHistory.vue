@@ -387,9 +387,15 @@ export default {
         }
 
         const response = await getHistoricalTasks(params)
-        this.historicalTasks = response.data.results || []
+        // 兼容后端结构，保证 historicalTasks 为数组
+        this.historicalTasks = Array.isArray(response.data?.results)
+          ? response.data.results
+          : Array.isArray(response.data)
+            ? response.data
+            : []
         this.pagination.total = response.data.total || 0
       } catch (error) {
+        this.historicalTasks = []
         this.$message.error('Failed to fetch historical tasks')
         console.error(error)
       } finally {
