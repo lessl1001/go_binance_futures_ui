@@ -464,8 +464,10 @@ export default {
         })
         const data = response.data
 
-        this.heatmapSeries = data.heatmap_data || []
+        // 保证 heatmapSeries 永远为数组，兼容后端变化
+        this.heatmapSeries = Array.isArray(data.heatmap_data) ? data.heatmap_data : []
       } catch (error) {
+        this.heatmapSeries = []
         console.error('Failed to fetch task heatmap:', error)
       }
     },
