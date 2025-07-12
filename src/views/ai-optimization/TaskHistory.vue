@@ -53,14 +53,14 @@
               {{ $t('table.search') }}
             </el-button>
             <el-button @click="resetFilters">
-              Reset
+              {{ $t('table.reset') }}
             </el-button>
           </el-form-item>
         </el-form>
       </div>
 
-      <!-- Historical Tasks Table -->
-      <div class="tasks-table">
+      <!-- Tasks Table -->
+      <div class="tasks-section">
         <el-table
           v-loading="loading"
           :data="historicalTasks"
@@ -71,13 +71,16 @@
             prop="name"
             :label="$t('aiOptimization.taskName')"
             width="200"
-            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="symbol"
+            label="Symbol"
+            width="100"
           />
           <el-table-column
             prop="status"
             :label="$t('aiOptimization.taskStatus')"
             width="120"
-            align="center"
           >
             <template slot-scope="scope">
               <el-tag :type="getStatusType(scope.row.status)">
@@ -85,17 +88,6 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column
-            prop="symbol"
-            :label="$t('aiOptimization.symbol')"
-            width="120"
-          />
-          <el-table-column
-            prop="strategy_name"
-            :label="$t('aiOptimization.strategyName')"
-            width="150"
-            show-overflow-tooltip
-          />
           <el-table-column
             prop="optimization_target"
             :label="$t('aiOptimization.optimizationTarget')"
@@ -199,12 +191,6 @@
                 {{ getStatusLabel(selectedTask.status) }}
               </el-tag>
             </el-descriptions-item>
-            <el-descriptions-item :label="$t('aiOptimization.symbol')">
-              {{ selectedTask.symbol }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="$t('aiOptimization.strategyName')">
-              {{ selectedTask.strategy_name }}
-            </el-descriptions-item>
             <el-descriptions-item :label="$t('aiOptimization.optimizationTarget')">
               {{ selectedTask.optimization_target }}
             </el-descriptions-item>
@@ -217,123 +203,12 @@
             <el-descriptions-item :label="$t('aiOptimization.elapsedTime')">
               {{ selectedTask.elapsed_time }}
             </el-descriptions-item>
-            <el-descriptions-item :label="'Historical Range'">
-              {{ selectedTask.start_date }} - {{ selectedTask.end_date }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="'Completed At'">
-              {{ selectedTask.completed_at }}
-            </el-descriptions-item>
           </el-descriptions>
-
-          <!-- Strategy Expression -->
-          <div v-if="selectedTask.strategy_expression" style="margin-top: 20px;">
-            <h4>策略表达式</h4>
-            <pre class="strategy-expression">{{ formatStrategyExpression(selectedTask.strategy_expression) }}</pre>
-          </div>
-
-          <!-- Best Parameters -->
-          <div style="margin-top: 20px;">
-            <h4>{{ $t('aiOptimization.bestParameters') }}</h4>
-            <el-table
-              :data="taskBestParameters"
-              size="small"
-              border
-              style="width: 100%"
-            >
-              <el-table-column
-                prop="name"
-                :label="$t('aiOptimization.parameterName')"
-                width="200"
-              />
-              <el-table-column
-                prop="value"
-                :label="$t('aiOptimization.defaultValue')"
-                width="150"
-              />
-              <el-table-column
-                prop="type"
-                :label="$t('aiOptimization.parameterType')"
-                width="120"
-              />
-            </el-table>
-          </div>
-
-          <!-- Performance Metrics -->
-          <div style="margin-top: 20px;">
-            <h4>Performance Metrics</h4>
-            <el-row :gutter="20">
-              <el-col :span="6">
-                <div class="metric-card">
-                  <div class="metric-label">Total Profit</div>
-                  <div class="metric-value profit">{{ formatCurrency(taskMetrics.total_profit) }}</div>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="metric-card">
-                  <div class="metric-label">Sharpe Ratio</div>
-                  <div class="metric-value">{{ formatNumber(taskMetrics.sharpe_ratio) }}</div>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="metric-card">
-                  <div class="metric-label">Max Drawdown</div>
-                  <div class="metric-value drawdown">{{ formatPercent(taskMetrics.max_drawdown) }}</div>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="metric-card">
-                  <div class="metric-label">Win Rate</div>
-                  <div class="metric-value">{{ formatPercent(taskMetrics.win_rate) }}</div>
-                </div>
-              </el-col>
-            </el-row>
-          </div>
         </div>
-      </el-dialog>
-
-      <!-- Task Report Dialog -->
-      <el-dialog
-        :title="$t('aiOptimization.viewReport')"
-        :visible.sync="reportDialog"
-        width="90%"
-      >
-        <div v-if="taskReport" class="report-content">
-          <div class="report-header">
-            <h2>{{ taskReport.task_name }} - Optimization Report</h2>
-            <p>Generated on: {{ taskReport.generated_at }}</p>
-          </div>
-
-          <div class="report-section">
-            <h3>Summary</h3>
-            <p>{{ taskReport.summary }}</p>
-          </div>
-
-          <div class="report-section">
-            <h3>Optimization Results</h3>
-            <el-table
-              :data="taskReport.optimization_results"
-              size="small"
-              border
-            >
-              <el-table-column prop="metric" label="Metric" width="200" />
-              <el-table-column prop="value" label="Value" width="150" />
-              <el-table-column prop="description" label="Description" />
-            </el-table>
-          </div>
-
-          <div class="report-section">
-            <h3>Parameter Analysis</h3>
-            <p>{{ taskReport.parameter_analysis }}</p>
-          </div>
-
-          <div class="report-section">
-            <h3>Recommendations</h3>
-            <ul>
-              <li v-for="(recommendation, index) in taskReport.recommendations" :key="index">
-                {{ recommendation }}
-              </li>
-            </ul>
-          </div>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="detailsDialog = false">
+            {{ $t('table.close') }}
+          </el-button>
         </div>
       </el-dialog>
     </div>
@@ -341,20 +216,7 @@
 </template>
 
 <script>
-import {
-  getHistoricalTasks,
-  getTaskResults,
-  getTaskReport,
-  exportTaskResults,
-  exportTaskReport,
-} from '@/api/ai-optimization'
-import {
-  convertTaskFromBackendFormat,
-  formatTaskDetails,
-  taskStatusTypes,
-  optimizationTargets,
-} from '@/utils/backend-task-management'
-import { formatStrategyExpression } from '@/utils/backend-optimization-monitor'
+import { getHistoricalTasks, getTaskReport, exportTaskResults, exportTaskReport } from '@/api/ai-optimization'
 
 export default {
   name: 'TaskHistory',
@@ -364,14 +226,10 @@ export default {
       exporting: false,
       historicalTasks: [],
       selectedTask: null,
-      taskBestParameters: [],
-      taskMetrics: {},
-      taskReport: null,
       detailsDialog: false,
-      reportDialog: false,
       filters: {
         status: '',
-        dateRange: [],
+        dateRange: null,
         symbol: '',
       },
       pagination: {
@@ -379,9 +237,6 @@ export default {
         size: 20,
         total: 0,
       },
-      taskStatusTypes,
-      optimizationTargets,
-      formatStrategyExpression,
     }
   },
   created() {
@@ -393,23 +248,16 @@ export default {
       try {
         const params = {
           page: this.pagination.current,
-          page_size: this.pagination.size,
+          size: this.pagination.size,
           ...this.filters,
         }
-
-        if (this.filters.dateRange && this.filters.dateRange.length === 2) {
-          params.start_date = this.filters.dateRange[0]
-          params.end_date = this.filters.dateRange[1]
-        }
-
         const response = await getHistoricalTasks(params)
-        // Convert backend format to frontend format
-        this.historicalTasks = Array.isArray(response.data?.results)
-          ? response.data.results.map(task => formatTaskDetails(convertTaskFromBackendFormat(task)))
+        this.historicalTasks = Array.isArray(response.data?.tasks)
+          ? response.data.tasks
           : Array.isArray(response.data)
-            ? response.data.map(task => formatTaskDetails(convertTaskFromBackendFormat(task)))
+            ? response.data
             : []
-        this.pagination.total = response.data.total || 0
+        this.pagination.total = response.data?.total || this.historicalTasks.length
       } catch (error) {
         this.historicalTasks = []
         this.$message.error('Failed to fetch historical tasks')
@@ -418,55 +266,22 @@ export default {
         this.loading = false
       }
     },
-
-    async viewTaskDetails(task) {
-      this.selectedTask = task
-      this.detailsDialog = true
-
+    async exportAllResults() {
+      this.exporting = true
       try {
-        const response = await getTaskResults(task.id)
-        const data = response.data
-
-        // Format strategy expression for display
-        this.selectedTask.formatted_strategy_expression = formatStrategyExpression(task.strategy_expression)
-
-        // Add result details
-        this.selectedTask.result_details = {
-          ...data,
-          formatted_objective_value: optimizationTargets[task.optimization_target]?.format(data.best_objective_value) || data.best_objective_value,
-        }
-
-        // Update best parameters
-        this.taskBestParameters = Object.entries(data.best_parameters || {}).map(([key, value]) => ({
-          name: key,
-          value: this.formatNumber(value.value),
-          type: value.type || 'float',
-        }))
-
-        // Update metrics
-        this.taskMetrics = data.metrics || {}
+        const response = await exportTaskResults('all')
+        this.downloadFile(response.data, 'all_task_results.json')
+        this.$message.success('Results exported successfully')
       } catch (error) {
-        this.$message.error('Failed to fetch task details')
+        this.$message.error('Failed to export results')
         console.error(error)
+      } finally {
+        this.exporting = false
       }
     },
-
-    async viewTaskReport(task) {
-      this.selectedTask = task
-      this.reportDialog = true
-
-      try {
-        const response = await getTaskReport(task.id)
-        this.taskReport = response.data
-      } catch (error) {
-        this.$message.error('Failed to fetch task report')
-        console.error(error)
-      }
-    },
-
     async exportTaskResults(task) {
       try {
-        const response = await exportTaskResults(task.id, 'json')
+        const response = await exportTaskResults(task.id)
         this.downloadFile(response.data, `task_${task.id}_results.json`)
         this.$message.success('Results exported successfully')
       } catch (error) {
@@ -474,7 +289,6 @@ export default {
         console.error(error)
       }
     },
-
     async downloadTaskReport(task) {
       try {
         const response = await exportTaskReport(task.id, 'pdf')
@@ -485,210 +299,118 @@ export default {
         console.error(error)
       }
     },
-
-    async exportAllResults() {
-      this.exporting = true
+    async viewTaskReport(task) {
       try {
-        // Export all filtered results
-        const params = { ...this.filters }
-        if (this.filters.dateRange && this.filters.dateRange.length === 2) {
-          params.start_date = this.filters.dateRange[0]
-          params.end_date = this.filters.dateRange[1]
-        }
-
-        // This would be a separate API endpoint for bulk export
-        // For now, we'll simulate it
-        this.$message.success('Export started, you will receive an email when complete')
+        const response = await getTaskReport(task.id)
+        // Handle viewing report - could open in new tab or show in dialog
+        this.$message.info('Report feature coming soon')
       } catch (error) {
-        this.$message.error('Failed to export all results')
+        this.$message.error('Failed to view report')
         console.error(error)
-      } finally {
-        this.exporting = false
       }
     },
-
+    viewTaskDetails(task) {
+      this.selectedTask = task
+      this.detailsDialog = true
+    },
     applyFilters() {
       this.pagination.current = 1
       this.fetchHistoricalTasks()
     },
-
     resetFilters() {
       this.filters = {
         status: '',
-        dateRange: [],
+        dateRange: null,
         symbol: '',
       }
       this.pagination.current = 1
       this.fetchHistoricalTasks()
     },
-
     handleSizeChange(size) {
       this.pagination.size = size
       this.fetchHistoricalTasks()
     },
-
     handleCurrentChange(current) {
       this.pagination.current = current
       this.fetchHistoricalTasks()
     },
-
+    getStatusType(status) {
+      const statusMap = {
+        completed: 'success',
+        failed: 'danger',
+        cancelled: 'warning',
+        running: 'primary',
+        pending: 'info',
+      }
+      return statusMap[status] || 'info'
+    },
+    getStatusLabel(status) {
+      const statusMap = {
+        completed: 'Completed',
+        failed: 'Failed',
+        cancelled: 'Cancelled',
+        running: 'Running',
+        pending: 'Pending',
+      }
+      return statusMap[status] || status
+    },
+    formatNumber(value) {
+      if (value === null || value === undefined) return '-'
+      return typeof value === 'number' ? value.toFixed(2) : value
+    },
     downloadFile(data, filename) {
       const blob = new Blob([data], { type: 'application/octet-stream' })
       const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = filename
-      link.click()
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
       window.URL.revokeObjectURL(url)
     },
-
-    getStatusType(status) {
-      const typeMap = {
-        'completed': 'success',
-        'failed': 'danger',
-        'cancelled': 'info',
-      }
-      return typeMap[status] || 'info'
+    // Navigation methods for consistent strategy workflow
+    goToOptimizationMonitor(taskId) {
+      this.$router.push(`/ai-optimization/optimization-monitor?taskId=${taskId}`)
     },
-
-    getStatusLabel(status) {
-      const labelMap = {
-        'completed': this.$t('aiOptimization.statusCompleted'),
-        'failed': this.$t('aiOptimization.statusFailed'),
-        'cancelled': this.$t('aiOptimization.statusCancelled'),
-      }
-      return labelMap[status] || status
-    },
-
-    formatNumber(value) {
-      if (typeof value !== 'number') return '0.00'
-      return value.toFixed(4)
-    },
-
-    formatCurrency(value) {
-      if (typeof value !== 'number') return '$0.00'
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-      }).format(value)
-    },
-
-    formatPercent(value) {
-      if (typeof value !== 'number') return '0.00%'
-      return (value * 100).toFixed(2) + '%'
+    goToTaskManagement() {
+      this.$router.push('/ai-optimization/task-management')
     },
   },
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .task-history-container {
-  padding: 20px;
-}
-
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.filter-section {
-  margin-bottom: 20px;
-  padding: 20px;
-  background-color: #f5f7fa;
-  border-radius: 4px;
-}
-
-.tasks-table {
-  margin-bottom: 20px;
-}
-
-.pagination-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-.metric-card {
-  text-align: center;
-  padding: 15px;
-  border: 1px solid #e4e7ed;
-  border-radius: 4px;
-  background-color: #fafafa;
-}
-
-.metric-label {
-  font-size: 12px;
-  color: #909399;
-  margin-bottom: 5px;
-}
-
-.metric-value {
-  font-size: 18px;
-  font-weight: bold;
-  color: #303133;
-}
-
-.strategy-expression {
-  background-color: #2d3748;
-  color: #e2e8f0;
-  padding: 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  line-height: 1.5;
-  overflow-x: auto;
-  white-space: pre-wrap;
-  margin: 10px 0;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-}
-
-.profit {
-  color: #67c23a;
-}
-
-.drawdown {
-  color: #e6a23c;
-}
-
-.report-content {
-  padding: 20px;
-}
-
-.report-header {
-  text-align: center;
-  margin-bottom: 30px;
-  border-bottom: 2px solid #e4e7ed;
-  padding-bottom: 20px;
-}
-
-.report-section {
-  margin-bottom: 30px;
-}
-
-.report-section h3 {
-  color: #303133;
-  margin-bottom: 15px;
-  border-left: 4px solid #409eff;
-  padding-left: 10px;
-}
-
-.report-section p {
-  line-height: 1.6;
-  color: #606266;
-}
-
-.report-section ul {
-  padding-left: 20px;
-}
-
-.report-section li {
-  margin-bottom: 5px;
-  color: #606266;
+  .history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    
+    h3 {
+      margin: 0;
+      color: #303133;
+    }
+  }
+  
+  .filter-section {
+    margin-bottom: 20px;
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 4px;
+    
+    .el-form-item {
+      margin-bottom: 0;
+    }
+  }
+  
+  .tasks-section {
+    margin-bottom: 20px;
+  }
+  
+  .pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
 }
 </style>
