@@ -492,33 +492,6 @@ export default {
         console.error('Error fetching task progress:', error)
       }
     },
-
-        this.taskInfo.progress = data.progress
-        this.taskInfo.elapsed_time = data.elapsed_time
-        this.taskInfo.iteration_count = data.iteration_count
-        this.taskInfo.best_objective_value = data.best_objective_value
-        this.taskInfo.status = data.status
-
-        // Update current parameters
-        this.currentParameters = Object.entries(data.current_parameters || {}).map(([key, value]) => ({
-          name: key,
-          value: this.formatNumber(value),
-        }))
-
-        // Update best parameters
-        this.bestParameters = Object.entries(data.best_parameters || {}).map(([key, value]) => ({
-          name: key,
-          value: this.formatNumber(value),
-        }))
-
-        // Update available parameters
-        this.availableParameters = Object.keys(data.current_parameters || {})
-
-        // Set default parameters for heatmap
-        if (this.availableParameters.length >= 2) {
-          if (!this.selectedParameter1) this.selectedParameter1 = this.availableParameters[0]
-          if (!this.selectedParameter2) this.selectedParameter2 = this.availableParameters[1]
-        }
       } catch (error) {
         console.error('Failed to fetch task progress:', error)
       }
