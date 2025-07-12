@@ -318,21 +318,6 @@
               </el-form-item>
             </el-col>
           </el-row>
-                  <el-option label="Profit Factor" value="profit_factor" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item :label="$t('aiOptimization.estimatedTime')" prop="max_iterations">
-                <el-input-number
-                  v-model="newTask.max_iterations"
-                  :min="10"
-                  :max="10000"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
         </el-form>
 
         <div slot="footer" class="dialog-footer">
@@ -625,65 +610,6 @@ export default {
         this.$message.success('Task paused successfully')
         this.fetchTasks()
       } catch (error) {
-        this.$message.error('Failed to pause task')
-        console.error(error)
-      }
-    },
-
-    async resumeTask(task) {
-      try {
-        await resumeOptimizationTask(task.id)
-        this.$message.success('Task resumed successfully')
-        this.fetchTasks()
-      } catch (error) {
-        this.$message.error('Failed to resume task')
-        console.error(error)
-      }
-    },
-
-    async deleteTask(task) {
-      this.$confirm('确定要删除这个任务吗？', 'Warning', {
-        confirmButtonText: this.$t('table.confirm'),
-        cancelButtonText: this.$t('table.cancel'),
-        type: 'warning',
-      }).then(async() => {
-        try {
-          await deleteOptimizationTask(task.id)
-          this.$message.success('Task deleted successfully')
-          this.fetchTasks()
-        } catch (error) {
-          this.$message.error('Failed to delete task')
-          console.error(error)
-        }
-      })
-    },
-
-    async viewTask(task) {
-      try {
-        const response = await getOptimizationTask(task.id)
-        this.selectedTask = formatTaskDetails(convertTaskFromBackendFormat(response.data))
-        this.viewTaskDialog = true
-      } catch (error) {
-        this.$message.error('Failed to fetch task details')
-        console.error(error)
-      }
-    },
-
-    getStatusType(status) {
-      return taskStatusTypes[status]?.type || 'info'
-    },
-
-    getStatusLabel(status) {
-      return taskStatusTypes[status]?.label || status
-    },
-
-    handleClose(done) {
-      this.$confirm('确定要关闭吗？未保存的修改将丢失。')
-        .then(() => {
-          done()
-        })
-        .catch(() => {})
-    },
         this.$message.error('Failed to pause task')
         console.error(error)
       }
