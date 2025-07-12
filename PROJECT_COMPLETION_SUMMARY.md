@@ -3,12 +3,18 @@
 ## 🎯 任务完成情况
 
 ### ✅ 1. API接口对接
-- **完成状态**: ✅ 已完成
+- **完成状态**: ✅ 已完成（已更新为新API规范）
 - **完成内容**:
   - 创建了详细的API端点文档 (`CURRENT_API_ENDPOINTS.md`)
   - 识别了100+个API端点，涵盖所有功能模块
+  - **全面升级AI优化API端点为新的标准化路径**
+  - **更新认证方式为 Authorization: Bearer token 格式**
+  - **将AI优化相关端点从 /ai-optimization/* 更新为 /api/deploy_strategy 和 /api/backtest**
+  - **添加了新的操作日志端点 /api/operation_logs**
+  - 保留了现有的核心API端点 (/features, /spots, /rush, /notice, /coin, /listen/coin)
   - 前端已配置为使用相对路径，确保与后端完美集成
   - 生产环境配置: `VUE_APP_BASE_API = ''`
+  - **增强了错误处理逻辑以兼容新的API响应格式**
 
 ### ✅ 2. 前后端集成配置
 - **完成状态**: ✅ 已完成
