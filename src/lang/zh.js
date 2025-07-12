@@ -476,9 +476,6 @@ export default {
     saveStrategy: '保存策略',
     loadTemplate: '加载模板',
     customStrategy: '自定义策略',
-    helpDoc: '帮助文档',
-    insertVariable: '插入变量',
-    insertFunction: '插入函数',
 
     // Parameter Space
     parameterName: '参数名称',

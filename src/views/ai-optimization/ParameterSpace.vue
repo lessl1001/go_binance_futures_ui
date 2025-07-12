@@ -42,13 +42,13 @@
             show-overflow-tooltip
           />
           <el-table-column
-            prop="enabled_count"
-            label="启用参数数量"
+            prop="parameter_count"
+            :label="'Parameters'"
             width="120"
             align="center"
           >
             <template slot-scope="scope">
-              <el-tag type="info">{{ getEnabledParametersCount(scope.row) }}</el-tag>
+              <el-tag type="info">{{ scope.row.parameters ? scope.row.parameters.length : 0 }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column
@@ -96,9 +96,8 @@
       <el-dialog
         :title="isEdit ? $t('table.edit') : $t('table.add')"
         :visible.sync="editorDialog"
-        width="95%"
+        width="90%"
         :before-close="handleClose"
-        class="parameter-editor-dialog"
       >
         <el-form
           ref="parameterSpaceForm"
@@ -133,116 +132,146 @@
           </el-form-item>
         </el-form>
 
-        <!-- Technical Indicators Configuration -->
-        <div class="indicators-section">
-          <h4>技术指标参数配置</h4>
-          <p class="help-text">配置技术指标参数，只有启用的参数才能在策略中使用。参数名称必须在所有指标中保持唯一。</p>
-          
-          <el-tabs v-model="activeIndicator" @tab-click="handleIndicatorChange">
-            <el-tab-pane 
-              v-for="(indicator, key) in technicalIndicators" 
-              :key="key"
-              :label="indicator.label" 
-              :name="key"
+        <!-- Parameters Section -->
+        <div class="parameters-section">
+          <div class="section-header">
+            <h4>{{ $t('aiOptimization.parameterRange') }}</h4>
+            <el-button
+              type="primary"
+              size="mini"
+              icon="el-icon-plus"
+              @click="addParameter"
             >
-              <div class="indicator-config">
-                <div class="section-header">
-                  <h5>{{ indicator.label }} 参数配置</h5>
-                  <el-button
-                    type="primary"
-                    size="mini"
-                    icon="el-icon-plus"
-                    @click="addIndicatorParameter(key)"
-                  >
-                    添加 {{ indicator.label }}
-                  </el-button>
-                </div>
-                
-                <el-table 
-                  :data="currentParameterSpace[`${key}_parameters`] || []"
-                  size="small"
-                  border
+              {{ $t('aiOptimization.addParameter') }}
+            </el-button>
+          </div>
+
+          <el-table
+            :data="currentParameterSpace.parameters || []"
+            border
+            style="width: 100%"
+          >
+            <el-table-column
+              prop="name"
+              :label="$t('aiOptimization.parameterName')"
+              width="150"
+            >
+              <template slot-scope="scope">
+                <el-input
+                  v-model="scope.row.name"
+                  size="mini"
+                  placeholder="Parameter name"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="type"
+              :label="$t('aiOptimization.parameterType')"
+              width="120"
+            >
+              <template slot-scope="scope">
+                <el-select
+                  v-model="scope.row.type"
+                  size="mini"
                   style="width: 100%"
                 >
-                  <el-table-column 
-                    v-for="field in indicator.fields" 
-                    :key="field.name"
-                    :prop="field.name"
-                    :label="field.label"
-                    :width="getColumnWidth(field)"
-                  >
-                    <template slot-scope="scope">
-                      <el-input
-                        v-if="field.type === 'text'"
-                        v-model="scope.row[field.name]"
-                        :placeholder="field.placeholder"
-                        size="mini"
-                        @blur="validateParameterName(scope.row, field.name)"
-                      />
-                      <el-select
-                        v-else-if="field.type === 'select'"
-                        v-model="scope.row[field.name]"
-                        size="mini"
-                        style="width: 100%"
-                      >
-                        <el-option
-                          v-for="option in field.options"
-                          :key="option.value"
-                          :label="option.label"
-                          :value="option.value"
-                        />
-                      </el-select>
-                      <el-input-number
-                        v-else-if="field.type === 'number'"
-                        v-model="scope.row[field.name]"
-                        :min="field.min"
-                        :max="field.max"
-                        :step="field.step || 1"
-                        size="mini"
-                        style="width: 100%"
-                      />
-                      <el-switch
-                        v-else-if="field.type === 'switch'"
-                        v-model="scope.row[field.name]"
-                        size="mini"
-                      />
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="操作" width="80">
-                    <template slot-scope="scope">
-                      <el-button
-                        type="danger"
-                        size="mini"
-                        icon="el-icon-delete"
-                        @click="removeIndicatorParameter(key, scope.$index)"
-                      />
-                    </template>
-                  </el-table-column>
-                </el-table>
-              </div>
-            </el-tab-pane>
-          </el-tabs>
-        </div>
-
-        <!-- Validation Messages -->
-        <div v-if="validationErrors.length > 0" class="validation-errors">
-          <h4>参数验证错误</h4>
-          <el-alert
-            v-for="(error, index) in validationErrors"
-            :key="index"
-            :title="error"
-            type="error"
-            :closable="false"
-            style="margin-bottom: 5px"
-          />
+                  <el-option label="Integer" value="int" />
+                  <el-option label="Float" value="float" />
+                  <el-option label="Boolean" value="bool" />
+                  <el-option label="Choice" value="choice" />
+                </el-select>
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="min_value"
+              :label="$t('aiOptimization.minValue')"
+              width="100"
+            >
+              <template slot-scope="scope">
+                <el-input
+                  v-model="scope.row.min_value"
+                  size="mini"
+                  type="number"
+                  :disabled="scope.row.type === 'bool'"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="max_value"
+              :label="$t('aiOptimization.maxValue')"
+              width="100"
+            >
+              <template slot-scope="scope">
+                <el-input
+                  v-model="scope.row.max_value"
+                  size="mini"
+                  type="number"
+                  :disabled="scope.row.type === 'bool'"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="step_size"
+              :label="$t('aiOptimization.stepSize')"
+              width="100"
+            >
+              <template slot-scope="scope">
+                <el-input
+                  v-model="scope.row.step_size"
+                  size="mini"
+                  type="number"
+                  :disabled="scope.row.type === 'bool' || scope.row.type === 'choice'"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="default_value"
+              :label="$t('aiOptimization.defaultValue')"
+              width="120"
+            >
+              <template slot-scope="scope">
+                <el-input
+                  v-if="scope.row.type !== 'bool' && scope.row.type !== 'choice'"
+                  v-model="scope.row.default_value"
+                  size="mini"
+                  type="number"
+                />
+                <el-select
+                  v-else-if="scope.row.type === 'bool'"
+                  v-model="scope.row.default_value"
+                  size="mini"
+                  style="width: 100%"
+                >
+                  <el-option label="True" :value="true" />
+                  <el-option label="False" :value="false" />
+                </el-select>
+                <el-input
+                  v-else
+                  v-model="scope.row.default_value"
+                  size="mini"
+                  placeholder="choices,separated,by,comma"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              :label="$t('table.actions')"
+              width="100"
+            >
+              <template slot-scope="scope">
+                <el-button
+                  type="danger"
+                  size="mini"
+                  icon="el-icon-delete"
+                  @click="removeParameter(scope.$index)"
+                />
+              </template>
+            </el-table-column>
+          </el-table>
         </div>
 
         <div slot="footer" class="dialog-footer">
           <el-button @click="editorDialog = false">
             {{ $t('table.cancel') }}
-          </el-button>
-          <el-button type="info" @click="validateParameters">
-            验证参数
           </el-button>
           <el-button type="primary" :loading="saving" @click="saveParameterSpace">
             {{ $t('table.save') }}
@@ -252,37 +281,46 @@
 
       <!-- View Parameters Dialog -->
       <el-dialog
-        title="参数详情"
+        :title="$t('aiOptimization.parameterRange')"
         :visible.sync="viewDialog"
         width="80%"
       >
-        <div class="parameter-details">
-          <div v-for="(indicators, indicatorType) in viewingParametersByType" :key="indicatorType" class="indicator-group">
-            <h4>{{ technicalIndicators[indicatorType]?.label || indicatorType }}</h4>
-            <el-table
-              :data="indicators"
-              size="small"
-              border
-              style="width: 100%"
-            >
-              <el-table-column prop="name" label="名称" width="150" />
-              <el-table-column prop="kline_type" label="K线类型" width="100" />
-              <el-table-column prop="period" label="周期" width="80" />
-              <el-table-column prop="multiplier" label="多元" width="80" />
-              <el-table-column prop="bandwidth" label="带宽" width="80" />
-              <el-table-column prop="fast_period" label="快线周期" width="80" />
-              <el-table-column prop="slow_period" label="慢线周期" width="80" />
-              <el-table-column prop="signal_period" label="信号线周期" width="80" />
-              <el-table-column prop="enabled" label="启用" width="80">
-                <template slot-scope="scope">
-                  <el-tag :type="scope.row.enabled ? 'success' : 'info'">
-                    {{ scope.row.enabled ? '启用' : '禁用' }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-        </div>
+        <el-table
+          :data="viewingParameters"
+          border
+          style="width: 100%"
+        >
+          <el-table-column
+            prop="name"
+            :label="$t('aiOptimization.parameterName')"
+            width="150"
+          />
+          <el-table-column
+            prop="type"
+            :label="$t('aiOptimization.parameterType')"
+            width="120"
+          />
+          <el-table-column
+            prop="min_value"
+            :label="$t('aiOptimization.minValue')"
+            width="100"
+          />
+          <el-table-column
+            prop="max_value"
+            :label="$t('aiOptimization.maxValue')"
+            width="100"
+          />
+          <el-table-column
+            prop="step_size"
+            :label="$t('aiOptimization.stepSize')"
+            width="100"
+          />
+          <el-table-column
+            prop="default_value"
+            :label="$t('aiOptimization.defaultValue')"
+            width="120"
+          />
+        </el-table>
       </el-dialog>
     </div>
   </div>
@@ -290,15 +328,6 @@
 
 <script>
 import { getParameterSpaces, saveParameterSpace, updateParameterSpace, deleteParameterSpace } from '@/api/ai-optimization'
-import { 
-  technicalIndicators, 
-  klineIntervals, 
-  defaultParameterSpace, 
-  createNewParameter, 
-  validateParameterSpace, 
-  convertToBackendFormat, 
-  convertFromBackendFormat 
-} from '@/utils/backend-parameter-space'
 
 export default {
   name: 'ParameterSpace',
@@ -307,21 +336,22 @@ export default {
       loading: false,
       saving: false,
       parameterSpaces: [],
-      currentParameterSpace: { ...defaultParameterSpace },
+      currentParameterSpace: {
+        name: '',
+        description: '',
+        optimization_target: 'profit',
+        parameters: [],
+      },
+      viewingParameters: [],
       editorDialog: false,
       viewDialog: false,
       isEdit: false,
-      activeIndicator: 'ma',
-      validationErrors: [],
-      viewingParametersByType: {},
-      technicalIndicators,
-      klineIntervals,
       rules: {
         name: [
           { required: true, message: 'Parameter space name is required', trigger: 'blur' },
         ],
         optimization_target: [
-          { required: true, message: 'Optimization target is required', trigger: 'blur' },
+          { required: true, message: 'Optimization target is required', trigger: 'change' },
         ],
       },
     }
@@ -334,10 +364,11 @@ export default {
       this.loading = true
       try {
         const response = await getParameterSpaces()
+        // 兼容后端返回的数组字段，保证表格数据为数组
         this.parameterSpaces = Array.isArray(response.data?.parameter_spaces)
-          ? response.data.parameter_spaces.map(ps => convertFromBackendFormat(ps))
+          ? response.data.parameter_spaces
           : Array.isArray(response.data)
-            ? response.data.map(ps => convertFromBackendFormat(ps))
+            ? response.data
             : []
       } catch (error) {
         this.parameterSpaces = []
@@ -349,45 +380,42 @@ export default {
     },
 
     createNewParameterSpace() {
-      this.currentParameterSpace = { ...defaultParameterSpace }
+      this.currentParameterSpace = {
+        name: '',
+        description: '',
+        optimization_target: 'profit',
+        parameters: [],
+      }
       this.isEdit = false
-      this.validationErrors = []
       this.editorDialog = true
     },
 
     editParameterSpace(parameterSpace) {
       this.currentParameterSpace = JSON.parse(JSON.stringify(parameterSpace))
       this.isEdit = true
-      this.validationErrors = []
       this.editorDialog = true
+    },
+
+    viewParameters(parameterSpace) {
+      this.viewingParameters = parameterSpace.parameters || []
+      this.viewDialog = true
     },
 
     async saveParameterSpace() {
       this.$refs.parameterSpaceForm.validate(async(valid) => {
         if (valid) {
-          // Validate parameters first
-          const errors = validateParameterSpace(this.currentParameterSpace)
-          if (errors.length > 0) {
-            this.validationErrors = errors
-            this.$message.error('请先修复参数验证错误')
-            return
-          }
-
           this.saving = true
           try {
-            const backendData = convertToBackendFormat(this.currentParameterSpace)
-            
             if (this.isEdit) {
-              await updateParameterSpace(this.currentParameterSpace.id, backendData)
+              await updateParameterSpace(this.currentParameterSpace.id, this.currentParameterSpace)
             } else {
-              await saveParameterSpace(backendData)
+              await saveParameterSpace(this.currentParameterSpace)
             }
-            
-            this.$message.success('参数空间保存成功')
+            this.$message.success('Parameter space saved successfully')
             this.editorDialog = false
             this.fetchParameterSpaces()
           } catch (error) {
-            this.$message.error('保存参数空间失败')
+            this.$message.error('Failed to save parameter space')
             console.error(error)
           } finally {
             this.saving = false
@@ -397,110 +425,42 @@ export default {
     },
 
     async deleteParameterSpace(parameterSpace) {
-      this.$confirm('确定要删除这个参数空间吗？', 'Warning', {
+      this.$confirm('Are you sure you want to delete this parameter space?', 'Warning', {
         confirmButtonText: this.$t('table.confirm'),
         cancelButtonText: this.$t('table.cancel'),
         type: 'warning',
       }).then(async() => {
         try {
           await deleteParameterSpace(parameterSpace.id)
-          this.$message.success('参数空间删除成功')
+          this.$message.success('Parameter space deleted successfully')
           this.fetchParameterSpaces()
         } catch (error) {
-          this.$message.error('删除参数空间失败')
+          this.$message.error('Failed to delete parameter space')
           console.error(error)
         }
       })
     },
 
-    viewParameters(parameterSpace) {
-      this.viewingParametersByType = {}
-      
-      // Group parameters by indicator type
-      Object.keys(this.technicalIndicators).forEach(indicatorType => {
-        const parameters = parameterSpace[`${indicatorType}_parameters`] || []
-        if (parameters.length > 0) {
-          this.viewingParametersByType[indicatorType] = parameters
-        }
+    addParameter() {
+      if (!this.currentParameterSpace.parameters) {
+        this.currentParameterSpace.parameters = []
+      }
+      this.currentParameterSpace.parameters.push({
+        name: '',
+        type: 'int',
+        min_value: 0,
+        max_value: 100,
+        step_size: 1,
+        default_value: 50,
       })
-      
-      this.viewDialog = true
     },
 
-    handleIndicatorChange(tab) {
-      this.activeIndicator = tab.name
-    },
-
-    addIndicatorParameter(indicatorType) {
-      const newParameter = createNewParameter(indicatorType)
-      if (newParameter) {
-        if (!this.currentParameterSpace[`${indicatorType}_parameters`]) {
-          this.currentParameterSpace[`${indicatorType}_parameters`] = []
-        }
-        this.currentParameterSpace[`${indicatorType}_parameters`].push(newParameter)
-      }
-    },
-
-    removeIndicatorParameter(indicatorType, index) {
-      this.currentParameterSpace[`${indicatorType}_parameters`].splice(index, 1)
-    },
-
-    validateParameters() {
-      const errors = validateParameterSpace(this.currentParameterSpace)
-      this.validationErrors = errors
-      
-      if (errors.length === 0) {
-        this.$message.success('参数验证通过')
-      } else {
-        this.$message.error('参数验证失败，请检查错误信息')
-      }
-    },
-
-    validateParameterName(parameter, fieldName) {
-      if (fieldName === 'name' && parameter.name) {
-        // Check for duplicate names
-        const allNames = []
-        Object.keys(this.technicalIndicators).forEach(indicatorType => {
-          const parameters = this.currentParameterSpace[`${indicatorType}_parameters`] || []
-          parameters.forEach(param => {
-            if (param.name && param !== parameter) {
-              allNames.push(param.name)
-            }
-          })
-        })
-        
-        if (allNames.includes(parameter.name)) {
-          this.$message.warning(`参数名称 "${parameter.name}" 已存在，请使用唯一的名称`)
-        }
-      }
-    },
-
-    getColumnWidth(field) {
-      switch (field.type) {
-        case 'text':
-          return field.name === 'name' ? '150px' : '120px'
-        case 'select':
-          return '120px'
-        case 'number':
-          return '100px'
-        case 'switch':
-          return '80px'
-        default:
-          return '120px'
-      }
-    },
-
-    getEnabledParametersCount(parameterSpace) {
-      let count = 0
-      Object.keys(this.technicalIndicators).forEach(indicatorType => {
-        const parameters = parameterSpace[`${indicatorType}_parameters`] || []
-        count += parameters.filter(param => param.enabled).length
-      })
-      return count
+    removeParameter(index) {
+      this.currentParameterSpace.parameters.splice(index, 1)
     },
 
     handleClose(done) {
-      this.$confirm('确定要关闭吗？未保存的修改将丢失。')
+      this.$confirm('Are you sure you want to close?')
         .then(() => {
           done()
         })
@@ -531,68 +491,23 @@ export default {
   margin-bottom: 20px;
 }
 
-.parameter-editor-dialog .el-dialog__body {
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.indicators-section {
+.parameters-section {
   margin-top: 20px;
-}
-
-.indicators-section h4 {
-  margin-bottom: 10px;
-  color: #303133;
-}
-
-.help-text {
-  color: #909399;
-  font-size: 13px;
-  margin-bottom: 15px;
-}
-
-.indicator-config {
-  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
-.section-header h5 {
+.section-header h4 {
   margin: 0;
-  color: #606266;
-}
-
-.validation-errors {
-  margin-top: 20px;
-  padding: 15px;
-  background-color: #fef0f0;
-  border-radius: 4px;
-}
-
-.validation-errors h4 {
-  margin-bottom: 10px;
-  color: #f56c6c;
-}
-
-.parameter-details {
-  max-height: 60vh;
-  overflow-y: auto;
-}
-
-.indicator-group {
-  margin-bottom: 20px;
-}
-
-.indicator-group h4 {
-  margin-bottom: 10px;
   color: #303133;
-  border-bottom: 2px solid #409eff;
-  padding-bottom: 5px;
 }
 
 .dialog-footer {
