@@ -226,7 +226,7 @@
           </el-descriptions>
 
           <!-- Strategy Expression -->
-          <div style="margin-top: 20px;" v-if="selectedTask.strategy_expression">
+          <div v-if="selectedTask.strategy_expression" style="margin-top: 20px;">
             <h4>策略表达式</h4>
             <pre class="strategy-expression">{{ formatStrategyExpression(selectedTask.strategy_expression) }}</pre>
           </div>
@@ -348,11 +348,11 @@ import {
   exportTaskResults,
   exportTaskReport,
 } from '@/api/ai-optimization'
-import { 
-  convertTaskFromBackendFormat, 
-  formatTaskDetails, 
-  taskStatusTypes, 
-  optimizationTargets 
+import {
+  convertTaskFromBackendFormat,
+  formatTaskDetails,
+  taskStatusTypes,
+  optimizationTargets,
 } from '@/utils/backend-task-management'
 import { formatStrategyExpression } from '@/utils/backend-optimization-monitor'
 
@@ -426,14 +426,14 @@ export default {
       try {
         const response = await getTaskResults(task.id)
         const data = response.data
-        
+
         // Format strategy expression for display
         this.selectedTask.formatted_strategy_expression = formatStrategyExpression(task.strategy_expression)
-        
+
         // Add result details
         this.selectedTask.result_details = {
           ...data,
-          formatted_objective_value: optimizationTargets[task.optimization_target]?.format(data.best_objective_value) || data.best_objective_value
+          formatted_objective_value: optimizationTargets[task.optimization_target]?.format(data.best_objective_value) || data.best_objective_value,
         }
 
         // Update best parameters

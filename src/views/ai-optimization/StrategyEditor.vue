@@ -37,6 +37,17 @@
             width="200"
           />
           <el-table-column
+            prop="category"
+            label="策略类型"
+            width="120"
+          >
+            <template slot-scope="scope">
+              <el-tag :type="getStrategyTypeTag(scope.row.category)">
+                {{ getStrategyTypeLabel(scope.row.category) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
             prop="description"
             :label="$t('aiOptimization.strategyDescription')"
             show-overflow-tooltip
@@ -92,6 +103,14 @@
         >
           <el-form-item :label="$t('aiOptimization.strategyName')" prop="name">
             <el-input v-model="currentStrategy.name" />
+          </el-form-item>
+          <el-form-item label="策略类型" prop="category">
+            <el-select v-model="currentStrategy.category" placeholder="请选择策略类型">
+              <el-option label="做多策略" value="Long" />
+              <el-option label="做空策略" value="Short" />
+              <el-option label="平多策略" value="Close Long" />
+              <el-option label="平空策略" value="Close Short" />
+            </el-select>
           </el-form-item>
           <el-form-item :label="$t('aiOptimization.strategyDescription')" prop="description">
             <el-input
@@ -155,56 +174,35 @@
         width="70%"
       >
         <div class="template-categories">
-          <el-tabs v-model="activeCategory" @tab-click="handleCategoryChange">
-            <el-tab-pane label="做多策略" name="Long">
-              <el-table
-                :data="filteredTemplates"
-                highlight-current-row
-                @row-click="selectTemplate"
-                style="width: 100%"
-              >
-                <el-table-column prop="name" label="策略名称" width="200" />
-                <el-table-column prop="description" label="策略描述" show-overflow-tooltip />
-                <el-table-column prop="expression" label="策略表达式" width="250" show-overflow-tooltip />
-              </el-table>
-            </el-tab-pane>
-            <el-tab-pane label="做空策略" name="Short">
-              <el-table
-                :data="filteredTemplates"
-                highlight-current-row
-                @row-click="selectTemplate"
-                style="width: 100%"
-              >
-                <el-table-column prop="name" label="策略名称" width="200" />
-                <el-table-column prop="description" label="策略描述" show-overflow-tooltip />
-                <el-table-column prop="expression" label="策略表达式" width="250" show-overflow-tooltip />
-              </el-table>
-            </el-tab-pane>
-            <el-tab-pane label="平多策略" name="Close Long">
-              <el-table
-                :data="filteredTemplates"
-                highlight-current-row
-                @row-click="selectTemplate"
-                style="width: 100%"
-              >
-                <el-table-column prop="name" label="策略名称" width="200" />
-                <el-table-column prop="description" label="策略描述" show-overflow-tooltip />
-                <el-table-column prop="expression" label="策略表达式" width="250" show-overflow-tooltip />
-              </el-table>
-            </el-tab-pane>
-            <el-tab-pane label="平空策略" name="Close Short">
-              <el-table
-                :data="filteredTemplates"
-                highlight-current-row
-                @row-click="selectTemplate"
-                style="width: 100%"
-              >
-                <el-table-column prop="name" label="策略名称" width="200" />
-                <el-table-column prop="description" label="策略描述" show-overflow-tooltip />
-                <el-table-column prop="expression" label="策略表达式" width="250" show-overflow-tooltip />
-              </el-table>
-            </el-tab-pane>
-          </el-tabs>
+          <!-- Strategy Type Filter -->
+          <div class="template-filter">
+            <el-select v-model="templateFilter" placeholder="选择策略类型" @change="handleTemplateFilterChange">
+              <el-option label="全部策略" value="All" />
+              <el-option label="做多策略" value="Long" />
+              <el-option label="做空策略" value="Short" />
+              <el-option label="平多策略" value="Close Long" />
+              <el-option label="平空策略" value="Close Short" />
+            </el-select>
+          </div>
+
+          <!-- Unified Template Table -->
+          <el-table
+            :data="filteredTemplates"
+            highlight-current-row
+            style="width: 100%; margin-top: 15px;"
+            @row-click="selectTemplate"
+          >
+            <el-table-column prop="name" label="策略名称" width="200" />
+            <el-table-column prop="category" label="策略类型" width="120">
+              <template slot-scope="scope">
+                <el-tag :type="getStrategyTypeTag(scope.row.category)">
+                  {{ getStrategyTypeLabel(scope.row.category) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="description" label="策略描述" show-overflow-tooltip />
+            <el-table-column prop="expression" label="策略表达式" width="250" show-overflow-tooltip />
+          </el-table>
         </div>
         <div slot="footer" class="dialog-footer">
           <el-button @click="loadTemplateDialog = false">
@@ -255,13 +253,13 @@ ema_4h_3.Data[0] // 当前时刻的EMA值
 ema_4h_3.Data[1] // 前一时刻的EMA值
 ema_4h_3.KlineInterval // K线周期 "4h"
 ema_4h_3.Period // 周期参数 3</code></pre>
-                  
+
                   <h5>MACD指标示例</h5>
                   <pre><code>// 假设参数空间中定义了macd_4h_12_26_9
 macd_4h_12_26_9.MACD[0] // 当前时刻的MACD值
 macd_4h_12_26_9.Signal[0] // 当前时刻的信号线值
 macd_4h_12_26_9.Histogram[0] // 当前时刻的柱状图值</code></pre>
-                  
+
                   <h5>K线数据示例</h5>
                   <pre><code>// 当定义了任意4h周期指标时，会自动生成kline_4h
 kline_4h.Close[0] // 当前收盘价
@@ -276,23 +274,23 @@ kline_4h.Amount[0] // 当前成交额</code></pre>
                 <h4>策略表达式示例</h4>
                 <div class="example-code">
                   <h5>简单EMA金叉策略</h5>
-                  <pre><code>ema_4h_3.Data[0] > ema_4h_7.Data[0] && ema_4h_3.Data[1] < ema_4h_7.Data[1]</code></pre>
-                  
+                  <pre><code>ema_4h_3.Data[0] &gt; ema_4h_7.Data[0] &amp;&amp; ema_4h_3.Data[1] &lt; ema_4h_7.Data[1]</code></pre>
+
                   <h5>RSI超卖策略</h5>
-                  <pre><code>rsi_1h_14.Data[0] < 30 && rsi_1h_14.Data[1] >= 30</code></pre>
-                  
+                  <pre><code>rsi_1h_14.Data[0] &lt; 30 &amp;&amp; rsi_1h_14.Data[1] &gt;= 30</code></pre>
+
                   <h5>多条件组合策略</h5>
-                  <pre><code>ema_4h_3.Data[0] > ema_4h_7.Data[0] && 
-rsi_1h_14.Data[0] > 40 && rsi_1h_14.Data[0] < 60 && 
-BasicTrend > 0 && 
-BTCUSDT.PercentChange > 0</code></pre>
-                  
+                  <pre><code>ema_4h_3.Data[0] &gt; ema_4h_7.Data[0] &amp;&amp;
+rsi_1h_14.Data[0] &gt; 40 &amp;&amp; rsi_1h_14.Data[0] &lt; 60 &amp;&amp;
+BasicTrend &gt; 0 &amp;&amp;
+BTCUSDT.PercentChange &gt; 0</code></pre>
+
                   <h5>止盈止损策略</h5>
                   <pre><code>// 止盈
-Position.Side == "LONG" && ORI > 5.0
+Position.Side == "LONG" &amp;&amp; ORI &gt; 5.0
 
 // 止损
-Position.Side == "LONG" && ORI < -3.0</code></pre>
+Position.Side == "LONG" &amp;&amp; ORI &lt; -3.0</code></pre>
                 </div>
               </div>
             </el-tab-pane>
@@ -328,11 +326,13 @@ export default {
         name: '',
         description: '',
         expression: '',
+        category: 'Long', // Default to Long strategy
       },
       editorDialog: false,
       loadTemplateDialog: false,
       showHelpDialog: false,
       activeCategory: 'Long',
+      templateFilter: 'All', // New filter for unified template view
       activeHelpTab: 'variables',
       isEdit: false,
       validationResult: null,
@@ -359,6 +359,9 @@ export default {
         name: [
           { required: true, message: 'Strategy name is required', trigger: 'blur' },
         ],
+        category: [
+          { required: true, message: 'Strategy category is required', trigger: 'change' },
+        ],
         expression: [
           { required: true, message: 'Strategy expression is required', trigger: 'blur' },
         ],
@@ -369,7 +372,10 @@ export default {
   },
   computed: {
     filteredTemplates() {
-      return backendStrategyTemplates.filter(template => template.category === this.activeCategory)
+      if (this.templateFilter === 'All') {
+        return backendStrategyTemplates
+      }
+      return backendStrategyTemplates.filter(template => template.category === this.templateFilter)
     },
     predefinedTemplates() {
       return backendStrategyTemplates
@@ -403,6 +409,7 @@ export default {
         name: '',
         description: '',
         expression: '',
+        category: 'Long', // Default to Long strategy
       }
       this.isEdit = false
       this.validationResult = null
@@ -465,13 +472,21 @@ export default {
       try {
         const response = await validateStrategyExpression({
           expression: this.currentStrategy.expression,
+          category: this.currentStrategy.category,
         })
         this.validationResult = response.data
+
+        if (response.data.valid) {
+          this.$message.success('Strategy validation passed')
+        } else {
+          this.$message.warning('Strategy validation failed: ' + response.data.message)
+        }
       } catch (error) {
         this.validationResult = {
           valid: false,
-          message: error.response?.data?.message || 'Validation failed',
+          message: error.message || 'Validation failed',
         }
+        this.$message.error('Validation error: ' + this.validationResult.message)
         console.error(error)
       }
     },
@@ -480,10 +495,17 @@ export default {
       try {
         const response = await validateStrategyExpression({
           expression: strategy.expression,
+          category: strategy.category || 'Long',
         })
-        this.$message.success(response.data.valid ? 'Strategy is valid' : 'Strategy is invalid')
+        const isValid = response.data.valid
+        const message = isValid ? 'Strategy is valid' : `Strategy is invalid: ${response.data.message}`
+
+        this.$message({
+          type: isValid ? 'success' : 'warning',
+          message: message,
+        })
       } catch (error) {
-        this.$message.error('Validation failed')
+        this.$message.error('Validation failed: ' + (error.message || 'Unknown error'))
         console.error(error)
       }
     },
@@ -498,12 +520,38 @@ export default {
           name: this.selectedTemplate.name,
           description: this.selectedTemplate.description,
           expression: this.selectedTemplate.expression,
+          category: this.selectedTemplate.category, // Include category from template
         }
         this.isEdit = false
         this.validationResult = null
         this.loadTemplateDialog = false
         this.editorDialog = true
       }
+    },
+
+    handleTemplateFilterChange() {
+      // Reset selected template when filter changes
+      this.selectedTemplate = null
+    },
+
+    getStrategyTypeTag(category) {
+      const tagMap = {
+        'Long': 'success',
+        'Short': 'danger',
+        'Close Long': 'warning',
+        'Close Short': 'info',
+      }
+      return tagMap[category] || 'default'
+    },
+
+    getStrategyTypeLabel(category) {
+      const labelMap = {
+        'Long': '做多',
+        'Short': '做空',
+        'Close Long': '平多',
+        'Close Short': '平空',
+      }
+      return labelMap[category] || category
     },
 
     handleCategoryChange(tab) {
@@ -515,15 +563,15 @@ export default {
       const line = cm.getLine(cursor.line)
       const start = cursor.ch
       const end = cursor.ch
-      
+
       // Get current word being typed
       const wordStart = line.substring(0, start).match(/\w*$/)
       const wordEnd = line.substring(end).match(/^\w*/)
       const word = (wordStart ? wordStart[0] : '') + (wordEnd ? wordEnd[0] : '')
-      
+
       // Filter suggestions based on current word
       const suggestions = []
-      
+
       // Add variables
       this.systemVariables.forEach(variable => {
         if (variable.name.toLowerCase().includes(word.toLowerCase())) {
@@ -534,7 +582,7 @@ export default {
           })
         }
       })
-      
+
       // Add functions
       this.systemFunctions.forEach(func => {
         if (func.name.toLowerCase().includes(word.toLowerCase())) {
@@ -545,15 +593,15 @@ export default {
           })
         }
       })
-      
+
       // Add common patterns
       const patterns = [
         'Data[0]', 'Data[1]', 'MACD[0]', 'Signal[0]', 'Histogram[0]',
         'High[0]', 'Low[0]', 'Mid[0]', 'Close[0]', 'Open[0]', 'Amount[0]',
         'PercentChange', 'Position.Side', 'Position.Amount', 'ORI',
-        'BasicTrend', 'NowPrice', 'NowTime'
+        'BasicTrend', 'NowPrice', 'NowTime',
       ]
-      
+
       patterns.forEach(pattern => {
         if (pattern.toLowerCase().includes(word.toLowerCase())) {
           suggestions.push({
@@ -562,7 +610,7 @@ export default {
           })
         }
       })
-      
+
       return {
         list: suggestions,
         from: { line: cursor.line, ch: start - (wordStart ? wordStart[0].length : 0) },
@@ -719,6 +767,14 @@ export default {
 
 .template-categories {
   margin-bottom: 20px;
+}
+
+.template-filter {
+  margin-bottom: 15px;
+}
+
+.template-filter .el-select {
+  width: 200px;
 }
 
 .template-categories .el-table {

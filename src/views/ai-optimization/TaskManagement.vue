@@ -271,7 +271,7 @@
                 <el-date-picker
                   v-model="newTask.historical_range"
                   type="daterange"
-                  range-separator="到"
+                  range-separator=" - "
                   :start-placeholder="$t('aiOptimization.startDate')"
                   :end-placeholder="$t('aiOptimization.endDate')"
                   format="yyyy-MM-dd"
@@ -403,21 +403,20 @@ import {
   stopOptimizationTask,
   pauseOptimizationTask,
   resumeOptimizationTask,
-  getOptimizationTask
+  getOptimizationTask,
 } from '@/api/ai-optimization'
 import { getStrategyTemplates } from '@/api/ai-optimization'
 import { getParameterSpaces } from '@/api/ai-optimization'
-import { 
-  taskStatusTypes, 
+import {
+  taskStatusTypes,
   optimizationTargets,
   defaultTaskConfig,
   convertTaskToBackendFormat,
   convertTaskFromBackendFormat,
   validateTaskConfig,
   formatTaskDetails,
-  generateTaskSummary,
   supportedSymbols,
-  supportedTimeframes
+  supportedTimeframes,
 } from '@/utils/backend-task-management'
 
 export default {
@@ -550,9 +549,9 @@ export default {
           const taskData = {
             ...this.newTask,
             start_date: this.newTask.historical_range[0],
-            end_date: this.newTask.historical_range[1]
+            end_date: this.newTask.historical_range[1],
           }
-          
+
           const errors = validateTaskConfig(taskData)
           if (errors.length > 0) {
             this.$message.error(errors.join('\n'))
