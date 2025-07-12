@@ -225,7 +225,7 @@
         </div>
 
         <!-- Validation Messages -->
-        <div v-if="validationErrors.length &gt; 0" class="validation-errors">
+        <div v-if="validationErrors.length > 0" class="validation-errors">
           <h4>参数验证错误</h4>
           <el-alert
             v-for="(error, index) in validationErrors"
