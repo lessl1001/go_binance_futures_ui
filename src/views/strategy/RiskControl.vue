@@ -47,8 +47,8 @@
                   clearable
                   @change="handleFilter"
                 >
-                  <el-option label="现货" value="spot" />
-                  <el-option label="合约" value="futures" />
+                  <el-option label="实盘" value="real" />
+                  <el-option label="测试" value="test" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -78,15 +78,7 @@
         :loading="listLoading"
         @click="fetchData"
       >
-        {{ $t('table.refresh') }}
-      </el-button>
-      <el-button
-        type="success"
-        size="mini"
-        :loading="savingAll"
-        @click="saveAll"
-      >
-        全部保存
+        刷新
       </el-button>
     </div>
 
@@ -103,24 +95,24 @@
     >
       <el-table-column
         label="币种"
-        prop="coin"
+        prop="symbol"
         align="center"
         width="100"
       />
       <el-table-column
         label="策略"
-        prop="strategy"
+        prop="strategy_name"
         align="center"
         width="150"
       />
       <el-table-column
         label="交易类型"
-        prop="tradeType"
+        prop="trade_type"
         align="center"
         width="100"
       >
         <template slot-scope="scope">
-          {{ scope.row.tradeType === 'spot' ? '现货' : '合约' }}
+          {{ scope.row.trade_type === 'real' ? '实盘' : '测试' }}
         </template>
       </el-table-column>
       <el-table-column
@@ -130,7 +122,7 @@
       >
         <template slot-scope="scope">
           <el-input-number
-            v-model="scope.row.consecutiveLossCount"
+            v-model="scope.row.freeze_on_loss_count"
             :min="0"
             :max="100"
             size="mini"
@@ -146,7 +138,7 @@
       >
         <template slot-scope="scope">
           <el-input-number
-            v-model="scope.row.freezeDuration"
+            v-model="scope.row.freeze_hours"
             :min="0"
             :max="168"
             size="mini"
@@ -162,7 +154,7 @@
       >
         <template slot-scope="scope">
           <el-tag
-            :type="scope.row.freezeStatus === 'normal' ? 'success' : 'danger'"
+            :type="!isFrozen(scope.row) ? 'success' : 'danger'"
             size="mini"
           >
             {{ formatFreezeStatus(scope.row) }}
@@ -172,7 +164,7 @@
       <el-table-column
         label="操作"
         align="center"
-        width="100"
+        width="180"
       >
         <template slot-scope="scope">
           <el-button
@@ -183,6 +175,23 @@
             @click="saveRow(scope.row)"
           >
             保存
+          </el-button>
+          <el-button
+            type="warning"
+            size="mini"
+            :disabled="!isFrozen(scope.row)"
+            @click="handleUnfreeze(scope.row)"
+            style="margin-left: 6px;"
+          >
+            解冻
+          </el-button>
+          <el-button
+            type="info"
+            size="mini"
+            @click="handleResetLoss(scope.row)"
+            style="margin-left: 6px;"
+          >
+            重置亏损
           </el-button>
         </template>
       </el-table-column>
@@ -200,410 +209,149 @@
         @close="removeError(index)"
       />
     </div>
-
-    <!-- Historical Logs Section -->
-    <el-collapse v-model="logActiveNames" class="log-section" style="margin-top: 20px">
-      <el-collapse-item title="历史操作日志" name="logs">
-        <!-- Log Filter -->
-        <el-form :model="logFilter" style="margin-bottom: 15px">
-          <el-row :gutter="20">
-            <el-col :span="4">
-              <el-form-item>
-                <el-date-picker
-                  v-model="logFilter.dateRange"
-                  type="datetimerange"
-                  range-separator="至"
-                  start-placeholder="开始日期"
-                  end-placeholder="结束日期"
-                  size="mini"
-                  @change="handleLogFilter"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="4">
-              <el-form-item>
-                <el-select
-                  v-model="logFilter.coin"
-                  placeholder="币种"
-                  clearable
-                  size="mini"
-                  @change="handleLogFilter"
-                >
-                  <el-option
-                    v-for="coin in coinOptions"
-                    :key="coin.value"
-                    :label="coin.label"
-                    :value="coin.value"
-                  />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="4">
-              <el-form-item>
-                <el-select
-                  v-model="logFilter.strategy"
-                  placeholder="策略"
-                  clearable
-                  size="mini"
-                  @change="handleLogFilter"
-                >
-                  <el-option
-                    v-for="strategy in strategyOptions"
-                    :key="strategy.value"
-                    :label="strategy.label"
-                    :value="strategy.value"
-                  />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="4">
-              <el-form-item>
-                <el-select
-                  v-model="logFilter.operationType"
-                  placeholder="操作类型"
-                  clearable
-                  size="mini"
-                  @change="handleLogFilter"
-                >
-                  <el-option label="参数更新" value="param_update" />
-                  <el-option label="手动解冻" value="manual_unfreeze" />
-                  <el-option label="自动冻结" value="auto_freeze" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </el-form>
-
-        <!-- Log Table -->
-        <el-table
-          v-loading="logLoading"
-          :data="logList"
-          element-loading-text="Loading"
-          border
-          fit
-          size="mini"
-          highlight-current-row
-        >
-          <el-table-column
-            label="时间"
-            prop="createdAt"
-            align="center"
-            width="180"
-          />
-          <el-table-column
-            label="币种"
-            prop="coin"
-            align="center"
-            width="100"
-          />
-          <el-table-column
-            label="策略"
-            prop="strategy"
-            align="center"
-            width="150"
-          />
-          <el-table-column
-            label="交易类型"
-            prop="tradeType"
-            align="center"
-            width="100"
-          >
-            <template slot-scope="scope">
-              {{ scope.row.tradeType === 'spot' ? '现货' : '合约' }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="操作类型"
-            prop="operationType"
-            align="center"
-            width="120"
-          >
-            <template slot-scope="scope">
-              {{ formatOperationType(scope.row.operationType) }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="操作人"
-            prop="operator"
-            align="center"
-            width="120"
-          />
-          <el-table-column
-            label="详情"
-            prop="details"
-            align="center"
-            show-overflow-tooltip
-          />
-        </el-table>
-
-        <!-- Log Pagination -->
-        <pagination
-          v-show="logTotal > 0"
-          :total="logTotal"
-          :page.sync="logQuery.page"
-          :limit.sync="logQuery.limit"
-          style="margin-top: 15px"
-          @pagination="fetchLogs"
-        />
-      </el-collapse-item>
-    </el-collapse>
   </div>
 </template>
 
 <script>
 import {
-  getRiskControlList,
-  updateRiskControlParams,
-  batchUpdateRiskControlParams,
-  getRiskControlLogs,
-  getEnabledStrategiesAndCoins,
-} from '@/api/strategy_risk_control'
-import Pagination from '@/components/Pagination'
+  getStrategyFreezeList,
+  updateStrategyFreeze,
+  unfreezeStrategy,
+  resetStrategyLoss,
+} from '@/api/strategyFreeze'
 
 export default {
   name: 'StrategyRiskControl',
-  components: {
-    Pagination,
-  },
   data() {
     return {
       activeNames: ['filter'],
-      logActiveNames: [],
       listLoading: false,
-      logLoading: false,
-      savingAll: false,
       list: [],
-      logList: [],
-      logTotal: 0,
       errorMessages: [],
-      coinOptions: [],
-      strategyOptions: [],
+      coinOptions: [
+        { label: 'BTCUSDT', value: 'BTCUSDT' },
+        { label: 'ETHUSDT', value: 'ETHUSDT' },
+        { label: 'ADAUSDT', value: 'ADAUSDT' },
+        { label: 'BNBUSDT', value: 'BNBUSDT' },
+      ],
+      strategyOptions: [
+        { label: 'MA_CROSS', value: 'MA_CROSS' },
+        { label: 'RSI_DIVERGENCE', value: 'RSI_DIVERGENCE' },
+        { label: 'BOLLINGER_BANDS', value: 'BOLLINGER_BANDS' },
+        { label: 'MACD_SIGNAL', value: 'MACD_SIGNAL' },
+      ],
       filterForm: {
         coin: '',
         strategy: '',
         tradeType: '',
         freezeStatus: '',
       },
-      logFilter: {
-        dateRange: null,
-        coin: '',
-        strategy: '',
-        operationType: '',
-      },
-      logQuery: {
-        page: 1,
-        limit: 20,
-      },
     }
   },
-  watch: {
-    logActiveNames(newValue) {
-      // Load logs when the logs section is expanded
-      if (newValue.includes('logs') && this.logList.length === 0) {
-        this.fetchLogs()
-      }
-    },
-  },
   created() {
-    this.fetchOptionsData()
     this.fetchData()
   },
   methods: {
-    async fetchOptionsData() {
-      try {
-        const response = await getEnabledStrategiesAndCoins()
-        this.coinOptions = response.data.coins || []
-        this.strategyOptions = response.data.strategies || []
-      } catch (error) {
-        console.error('Failed to fetch options:', error)
-        // Set default options if API fails - no error message shown to user
-        this.coinOptions = [
-          { label: 'BTCUSDT', value: 'BTCUSDT' },
-          { label: 'ETHUSDT', value: 'ETHUSDT' },
-          { label: 'ADAUSDT', value: 'ADAUSDT' },
-          { label: 'BNBUSDT', value: 'BNBUSDT' },
-        ]
-        this.strategyOptions = [
-          { label: 'MA_CROSS', value: 'MA_CROSS' },
-          { label: 'RSI_DIVERGENCE', value: 'RSI_DIVERGENCE' },
-          { label: 'BOLLINGER_BANDS', value: 'BOLLINGER_BANDS' },
-          { label: 'MACD_SIGNAL', value: 'MACD_SIGNAL' },
-        ]
-      }
-    },
     async fetchData() {
       this.listLoading = true
       try {
-        const response = await getRiskControlList(this.filterForm)
-        this.list = response.data.map(item => ({
+        const params = {
+          page: 1,
+          pageSize: 20,
+        }
+        if (this.filterForm.coin) params.symbol = this.filterForm.coin
+        if (this.filterForm.strategy) params.strategy_name = this.filterForm.strategy
+        if (this.filterForm.tradeType) params.trade_type = this.filterForm.tradeType
+
+        const response = await getStrategyFreezeList(params)
+        // response.data.list是后端返回的主列表
+        this.list = (response.data.list || []).map(item => ({
           ...item,
           changed: false,
           saving: false,
         }))
+        // 处理冻结状态筛选
+        if (this.filterForm.freezeStatus) {
+          this.list = this.list.filter(row => {
+            if (this.filterForm.freezeStatus === 'frozen') {
+              return this.isFrozen(row)
+            } else if (this.filterForm.freezeStatus === 'normal') {
+              return !this.isFrozen(row)
+            }
+            return true
+          })
+        }
       } catch (error) {
-        console.error('Failed to fetch risk control data:', error)
-        // Silently fall back to mock data - no error message shown to user
-        this.list = [
-          {
-            id: 1,
-            coin: 'BTCUSDT',
-            strategy: 'MA_CROSS',
-            tradeType: 'futures',
-            consecutiveLossCount: 3,
-            freezeDuration: 2,
-            freezeStatus: 'normal',
-            remainingHours: 0,
-            changed: false,
-            saving: false,
-          },
-          {
-            id: 2,
-            coin: 'ETHUSDT',
-            strategy: 'RSI_DIVERGENCE',
-            tradeType: 'futures',
-            consecutiveLossCount: 5,
-            freezeDuration: 4,
-            freezeStatus: 'frozen',
-            remainingHours: 2,
-            changed: false,
-            saving: false,
-          },
-          {
-            id: 3,
-            coin: 'ADAUSDT',
-            strategy: 'BOLLINGER_BANDS',
-            tradeType: 'spot',
-            consecutiveLossCount: 2,
-            freezeDuration: 1,
-            freezeStatus: 'normal',
-            remainingHours: 0,
-            changed: false,
-            saving: false,
-          },
-        ]
+        this.list = []
+        this.$message.error('获取风控数据失败')
       } finally {
         this.listLoading = false
-      }
-    },
-    async fetchLogs() {
-      this.logLoading = true
-      try {
-        const params = {
-          ...this.logQuery,
-          ...this.logFilter,
-        }
-        if (this.logFilter.dateRange) {
-          params.startTime = this.logFilter.dateRange[0]
-          params.endTime = this.logFilter.dateRange[1]
-        }
-        const response = await getRiskControlLogs(params)
-        this.logList = response.data.list || []
-        this.logTotal = response.data.total || 0
-      } catch (error) {
-        console.error('Failed to fetch logs:', error)
-        // Silently fall back to mock data - no error message shown to user
-        this.logList = [
-          {
-            id: 1,
-            createdAt: '2023-12-01 10:30:00',
-            coin: 'BTCUSDT',
-            strategy: 'MA_CROSS',
-            tradeType: 'futures',
-            operationType: 'param_update',
-            operator: 'admin',
-            details: '连续亏损次数从2改为3，冻结时长从1小时改为2小时',
-          },
-          {
-            id: 2,
-            createdAt: '2023-12-01 09:15:00',
-            coin: 'ETHUSDT',
-            strategy: 'RSI_DIVERGENCE',
-            tradeType: 'futures',
-            operationType: 'auto_freeze',
-            operator: 'system',
-            details: '触发连续亏损5次，自动冻结4小时',
-          },
-        ]
-        this.logTotal = 2
-      } finally {
-        this.logLoading = false
       }
     },
     handleFilter() {
       this.fetchData()
     },
-    handleLogFilter() {
-      this.logQuery.page = 1
-      this.fetchLogs()
-    },
     handleParamChange(row) {
       row.changed = true
+    },
+    isFrozen(row) {
+      // 判断冻结状态
+      const now = Math.floor(Date.now() / 1000)
+      return row.freeze_until && row.freeze_until > now
+    },
+    formatFreezeStatus(row) {
+      if (!this.isFrozen(row)) {
+        return '正常'
+      } else {
+        const now = Math.floor(Date.now() / 1000)
+        const remainSec = row.freeze_until - now
+        const remainHour = Math.ceil(remainSec / 3600)
+        return `已冻结(${remainHour}小时)`
+      }
     },
     async saveRow(row) {
       row.saving = true
       try {
-        await updateRiskControlParams({
-          id: row.id,
-          consecutiveLossCount: row.consecutiveLossCount,
-          freezeDuration: row.freezeDuration,
+        await updateStrategyFreeze(row.id, {
+          freeze_on_loss_count: row.freeze_on_loss_count,
+          freeze_hours: row.freeze_hours,
+          loss_count: row.loss_count || 0,
         })
         row.changed = false
         this.$message.success('保存成功')
-        this.fetchData() // Refresh to get updated freeze status
+        this.fetchData()
       } catch (error) {
-        console.error('Failed to save row:', error)
-        // Show user-friendly error message for save operations
         this.$message.error('保存失败，请重试')
-        this.errorMessages.push(`保存失败: ${row.coin} - ${row.strategy}`)
+        this.errorMessages.push(`保存失败: ${row.symbol} - ${row.strategy_name}`)
       } finally {
         row.saving = false
       }
     },
-    async saveAll() {
-      const changedRows = this.list.filter(row => row.changed)
-      if (changedRows.length === 0) {
-        this.$message.info('没有需要保存的更改')
-        return
-      }
-
-      this.savingAll = true
+    async handleUnfreeze(row) {
       try {
-        const data = changedRows.map(row => ({
-          id: row.id,
-          consecutiveLossCount: row.consecutiveLossCount,
-          freezeDuration: row.freezeDuration,
-        }))
-        await batchUpdateRiskControlParams(data)
-        changedRows.forEach(row => {
-          row.changed = false
+        await unfreezeStrategy({
+          symbol: row.symbol,
+          strategy_name: row.strategy_name,
+          trade_type: row.trade_type,
         })
-        this.$message.success('全部保存成功')
-        this.fetchData() // Refresh to get updated freeze status
+        this.$message.success('解冻成功')
+        this.fetchData()
       } catch (error) {
-        console.error('Failed to save all:', error)
-        // Show user-friendly error message for save operations
-        this.$message.error('批量保存失败，请重试')
-        this.errorMessages.push('批量保存失败')
-      } finally {
-        this.savingAll = false
+        this.$message.error('解冻失败，请重试')
       }
     },
-    formatFreezeStatus(row) {
-      if (row.freezeStatus === 'normal') {
-        return '正常'
-      } else if (row.freezeStatus === 'frozen') {
-        const remainingHours = row.remainingHours || 0
-        return remainingHours > 0 ? `已冻结(剩余${remainingHours}小时)` : '已冻结'
+    async handleResetLoss(row) {
+      try {
+        await resetStrategyLoss({
+          symbol: row.symbol,
+          strategy_name: row.strategy_name,
+          trade_type: row.trade_type,
+        })
+        this.$message.success('重置亏损成功')
+        this.fetchData()
+      } catch (error) {
+        this.$message.error('重置亏损失败，请重试')
       }
-      return '未知'
-    },
-    formatOperationType(type) {
-      const typeMap = {
-        param_update: '参数更新',
-        manual_unfreeze: '手动解冻',
-        auto_freeze: '自动冻结',
-      }
-      return typeMap[type] || type
     },
     removeError(index) {
       this.errorMessages.splice(index, 1)
@@ -616,16 +364,10 @@ export default {
 .filter-section {
   margin-bottom: 20px;
 }
-
 .action-buttons {
   margin-bottom: 10px;
 }
-
 .error-messages {
   margin-top: 10px;
-}
-
-.log-section {
-  margin-top: 20px;
 }
 </style>
