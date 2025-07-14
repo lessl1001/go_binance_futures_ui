@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 1. 获取冻结配置列表
 export function getStrategyFreezeList(query = {}) {
   return request({
-    url: '/straategy-freeze',
+    url: '/strategy-freeze',
     method: 'get',
     params: query,
   })
