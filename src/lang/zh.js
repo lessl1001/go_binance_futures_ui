@@ -84,6 +84,7 @@ export default {
     strategyCenter: '策略中心',
     strategyTest: '策略测试',
     strategyConfigLib: '策略配置库',
+    strategyRiskControl: '策略风控',
     spotsTrade: '现货交易',
     deliveryTrade: '币本位交易',
   },

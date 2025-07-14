@@ -183,6 +183,12 @@ const tradeRouter = [
         component: () => import('@/views/futures/StrategyTemplate'),
         meta: { title: 'strategyConfigLib', icon: 'table', affix: false, noCache: true },
       },
+      {
+        path: 'risk-control',
+        name: 'strategyRiskControl',
+        component: () => import('@/views/strategy/RiskControl'),
+        meta: { title: 'strategyRiskControl', icon: 'lock', affix: false, noCache: true },
+      },
     ],
   },
   {
