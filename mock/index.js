@@ -6,6 +6,7 @@ const role = require('./role')
 const article = require('./article')
 const search = require('./remote-search')
 const strategyRiskControl = require('./strategy_risk_control')
+const strategyFreeze = require('./strategy_freeze')
 
 const mocks = [
   ...user,
@@ -13,6 +14,7 @@ const mocks = [
   ...article,
   ...search,
   ...strategyRiskControl,
+  ...strategyFreeze,
 ]
 
 // for front mock
