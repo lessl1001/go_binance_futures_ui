@@ -208,60 +208,68 @@
         <el-form :model="logFilter" style="margin-bottom: 15px">
           <el-row :gutter="20">
             <el-col :span="4">
-              <el-date-picker
-                v-model="logFilter.dateRange"
-                type="datetimerange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-                size="mini"
-                @change="handleLogFilter"
-              />
-            </el-col>
-            <el-col :span="4">
-              <el-select
-                v-model="logFilter.coin"
-                placeholder="币种"
-                clearable
-                size="mini"
-                @change="handleLogFilter"
-              >
-                <el-option
-                  v-for="coin in coinOptions"
-                  :key="coin.value"
-                  :label="coin.label"
-                  :value="coin.value"
+              <el-form-item>
+                <el-date-picker
+                  v-model="logFilter.dateRange"
+                  type="datetimerange"
+                  range-separator="至"
+                  start-placeholder="开始日期"
+                  end-placeholder="结束日期"
+                  size="mini"
+                  @change="handleLogFilter"
                 />
-              </el-select>
+              </el-form-item>
             </el-col>
             <el-col :span="4">
-              <el-select
-                v-model="logFilter.strategy"
-                placeholder="策略"
-                clearable
-                size="mini"
-                @change="handleLogFilter"
-              >
-                <el-option
-                  v-for="strategy in strategyOptions"
-                  :key="strategy.value"
-                  :label="strategy.label"
-                  :value="strategy.value"
-                />
-              </el-select>
+              <el-form-item>
+                <el-select
+                  v-model="logFilter.coin"
+                  placeholder="币种"
+                  clearable
+                  size="mini"
+                  @change="handleLogFilter"
+                >
+                  <el-option
+                    v-for="coin in coinOptions"
+                    :key="coin.value"
+                    :label="coin.label"
+                    :value="coin.value"
+                  />
+                </el-select>
+              </el-form-item>
             </el-col>
             <el-col :span="4">
-              <el-select
-                v-model="logFilter.operationType"
-                placeholder="操作类型"
-                clearable
-                size="mini"
-                @change="handleLogFilter"
-              >
-                <el-option label="参数更新" value="param_update" />
-                <el-option label="手动解冻" value="manual_unfreeze" />
-                <el-option label="自动冻结" value="auto_freeze" />
-              </el-select>
+              <el-form-item>
+                <el-select
+                  v-model="logFilter.strategy"
+                  placeholder="策略"
+                  clearable
+                  size="mini"
+                  @change="handleLogFilter"
+                >
+                  <el-option
+                    v-for="strategy in strategyOptions"
+                    :key="strategy.value"
+                    :label="strategy.label"
+                    :value="strategy.value"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="4">
+              <el-form-item>
+                <el-select
+                  v-model="logFilter.operationType"
+                  placeholder="操作类型"
+                  clearable
+                  size="mini"
+                  @change="handleLogFilter"
+                >
+                  <el-option label="参数更新" value="param_update" />
+                  <el-option label="手动解冻" value="manual_unfreeze" />
+                  <el-option label="自动冻结" value="auto_freeze" />
+                </el-select>
+              </el-form-item>
             </el-col>
           </el-row>
         </el-form>
@@ -388,6 +396,14 @@ export default {
       },
     }
   },
+  watch: {
+    logActiveNames(newValue) {
+      // Load logs when the logs section is expanded
+      if (newValue.includes('logs') && this.logList.length === 0) {
+        this.fetchLogs()
+      }
+    },
+  },
   created() {
     this.fetchOptionsData()
     this.fetchData()
@@ -400,7 +416,7 @@ export default {
         this.strategyOptions = response.data.strategies || []
       } catch (error) {
         console.error('Failed to fetch options:', error)
-        // Set default options if API fails
+        // Set default options if API fails - no error message shown to user
         this.coinOptions = [
           { label: 'BTCUSDT', value: 'BTCUSDT' },
           { label: 'ETHUSDT', value: 'ETHUSDT' },
@@ -426,9 +442,7 @@ export default {
         }))
       } catch (error) {
         console.error('Failed to fetch risk control data:', error)
-        // Show user-friendly error message
-        this.$message.error('获取数据失败，请检查网络连接或联系管理员')
-        // Set default/mock data for demonstration
+        // Silently fall back to mock data - no error message shown to user
         this.list = [
           {
             id: 1,
@@ -487,9 +501,7 @@ export default {
         this.logTotal = response.data.total || 0
       } catch (error) {
         console.error('Failed to fetch logs:', error)
-        // Show user-friendly error message
-        this.$message.error('获取日志失败，请检查网络连接或联系管理员')
-        // Set default/mock data for demonstration
+        // Silently fall back to mock data - no error message shown to user
         this.logList = [
           {
             id: 1,
@@ -540,8 +552,8 @@ export default {
         this.fetchData() // Refresh to get updated freeze status
       } catch (error) {
         console.error('Failed to save row:', error)
-        // Show user-friendly error message
-        this.$message.error('保存失败，请检查网络连接或联系管理员')
+        // Show user-friendly error message for save operations
+        this.$message.error('保存失败，请重试')
         this.errorMessages.push(`保存失败: ${row.coin} - ${row.strategy}`)
       } finally {
         row.saving = false
@@ -569,8 +581,8 @@ export default {
         this.fetchData() // Refresh to get updated freeze status
       } catch (error) {
         console.error('Failed to save all:', error)
-        // Show user-friendly error message
-        this.$message.error('批量保存失败，请检查网络连接或联系管理员')
+        // Show user-friendly error message for save operations
+        this.$message.error('批量保存失败，请重试')
         this.errorMessages.push('批量保存失败')
       } finally {
         this.savingAll = false

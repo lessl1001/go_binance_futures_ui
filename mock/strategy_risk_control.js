@@ -6,7 +6,7 @@ module.exports = [
     type: 'get',
     response: () => {
       return {
-        code: 20000,
+        code: 200,
         data: [
           {
             id: 1,
@@ -48,7 +48,7 @@ module.exports = [
     type: 'put',
     response: () => {
       return {
-        code: 20000,
+        code: 200,
         data: 'success',
       }
     },
@@ -59,7 +59,7 @@ module.exports = [
     type: 'put',
     response: () => {
       return {
-        code: 20000,
+        code: 200,
         data: 'success',
       }
     },
@@ -70,7 +70,7 @@ module.exports = [
     type: 'get',
     response: () => {
       return {
-        code: 20000,
+        code: 200,
         data: {
           list: [
             {
@@ -105,7 +105,7 @@ module.exports = [
     type: 'get',
     response: () => {
       return {
-        code: 20000,
+        code: 200,
         data: {
           coins: [
             { label: 'BTCUSDT', value: 'BTCUSDT' },
