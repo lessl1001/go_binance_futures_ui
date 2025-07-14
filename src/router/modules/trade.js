@@ -29,20 +29,6 @@ const tradeRouter = [
         meta: { title: 'futuresAccount2', icon: 'table', affix: false, noCache: true },
         hidden: true,
       },
-      {
-        path: 'strategy-template',
-        name: 'strategyTemplate',
-        component: () => import('@/views/futures/StrategyTemplate'),
-        meta: { title: 'strategyTemplate', icon: 'table', affix: false, noCache: true },
-        hidden: true,
-      },
-      {
-        path: 'test-strategy-results',
-        name: 'testStrategyResult',
-        component: () => import('@/views/order/testOrder'),
-        meta: { title: 'testStrategyResult', icon: 'table', affix: false, noCache: true },
-        hidden: true,
-      },
     ],
   },
   {
@@ -176,6 +162,26 @@ const tradeRouter = [
         name: 'TradeCode',
         component: () => import('@/views/trade/TradeCode'),
         meta: { title: 'systemConfig', icon: 'form', affix: false, noCache: true },
+      },
+    ],
+  },
+  {
+    path: '/strategy-center',
+    component: Layout,
+    redirect: '/strategy-center/test-strategy-results',
+    meta: { title: 'strategyCenter', icon: 'setting' },
+    children: [
+      {
+        path: 'test-strategy-results',
+        name: 'strategyTestResult',
+        component: () => import('@/views/order/testOrder'),
+        meta: { title: 'strategyTest', icon: 'table', affix: false, noCache: true },
+      },
+      {
+        path: 'strategy-template',
+        name: 'strategyConfigTemplate',
+        component: () => import('@/views/futures/StrategyTemplate'),
+        meta: { title: 'strategyConfigLib', icon: 'table', affix: false, noCache: true },
       },
     ],
   },

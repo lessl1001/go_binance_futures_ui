@@ -51,6 +51,14 @@
       >
         {{ $t('table.deleteAll') }}
       </el-button>
+      <el-button
+        type="success"
+        size="mini"
+        :loading="exportLoading"
+        @click="exportReport()"
+      >
+        {{ $t('table.exportReport') }}
+      </el-button>
       <div style="float:right; margin-right: 10px;">{{ $t('trade.nowProfit') }}: {{ allProfit }}</div>
     </div>
 
@@ -253,6 +261,8 @@ import { getResults, delAllResults, delResults } from '@/api/testStrategyResult'
 import Pagination from '@/components/Pagination'
 import { parseTime } from '@/utils/index'
 import { round } from 'mathjs'
+import { saveAs } from 'file-saver'
+import XLSX from 'xlsx'
 
 import { codemirror } from 'vue-codemirror'
 import 'codemirror/lib/codemirror.css'
@@ -331,6 +341,7 @@ export default {
         position_side: '',
       },
       listLoading: false,
+      exportLoading: false,
       rowKey(row) {
         return row.symbol + row.id
       },
@@ -456,6 +467,64 @@ export default {
         await this.getList()
       } catch (e) {
         this.$message({ message: this.$t('table.actionFail'), type: 'success' })
+      }
+    },
+    async exportReport() {
+      this.exportLoading = true
+      try {
+        // Get all data for export (without pagination)
+        const { data } = await getResults({
+          ...this.listQuery,
+          page: 1,
+          limit: 10000, // Large number to get all data
+          start_time: this.listQuery.start_time ? +(this.listQuery.start_time) : undefined,
+          end_time: this.listQuery.end_time ? +(this.listQuery.end_time) : undefined,
+        })
+
+        const exportData = (data.list ?? []).map(item => {
+          const profitPercent = this.profitPercent(item)
+          const closeProfit = item.close_profit === '0'
+            ? this.round((item.now_price - item.price) * item.position_amt)
+            : item.close_profit
+
+          return {
+            '币种': item.symbol,
+            '持仓方向': item.position_side === 'LONG' ? '做多' : '做空',
+            '数量': item.position_amt,
+            'USDT': item.usdt,
+            '杠杆': item.leverage,
+            '开仓价格': item.price,
+            '当前价格': item.now_price,
+            '平仓价格': item.close_price !== '0' ? item.close_price : '-',
+            '盈亏': closeProfit,
+            '收益率(%)': this.round(profitPercent),
+            '周期': item.createTime === item.updateTime ? '-' : this.toPeriod(item.updateTime, item.createTime),
+            '创建时间': parseTime(item.createTime),
+            '开仓策略': item.open_strategy,
+            '平仓策略': item.close_strategy || '-',
+          }
+        })
+
+        // Create workbook and worksheet
+        const ws = XLSX.utils.json_to_sheet(exportData)
+        const wb = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wb, ws, '策略测试结果')
+
+        // Generate Excel file
+        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+        const excelData = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+
+        // Generate filename with current date
+        const now = new Date()
+        const filename = `策略测试结果_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.xlsx`
+
+        saveAs(excelData, filename)
+        this.$message({ message: this.$t('table.actionSuccess'), type: 'success' })
+      } catch (e) {
+        console.error('Export failed:', e)
+        this.$message({ message: this.$t('table.actionFail'), type: 'error' })
+      } finally {
+        this.exportLoading = false
       }
     },
   },
