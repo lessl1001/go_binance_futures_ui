@@ -480,13 +480,13 @@ export default {
           start_time: this.listQuery.start_time ? +(this.listQuery.start_time) : undefined,
           end_time: this.listQuery.end_time ? +(this.listQuery.end_time) : undefined,
         })
-        
+
         const exportData = (data.list ?? []).map(item => {
           const profitPercent = this.profitPercent(item)
-          const closeProfit = item.close_profit === '0' ? 
-            this.round((item.now_price - item.price) * item.position_amt) : 
-            item.close_profit
-          
+          const closeProfit = item.close_profit === '0'
+            ? this.round((item.now_price - item.price) * item.position_amt)
+            : item.close_profit
+
           return {
             '币种': item.symbol,
             '持仓方向': item.position_side === 'LONG' ? '做多' : '做空',
@@ -504,20 +504,20 @@ export default {
             '平仓策略': item.close_strategy || '-',
           }
         })
-        
+
         // Create workbook and worksheet
         const ws = XLSX.utils.json_to_sheet(exportData)
         const wb = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(wb, ws, '策略测试结果')
-        
+
         // Generate Excel file
         const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
         const excelData = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-        
+
         // Generate filename with current date
         const now = new Date()
         const filename = `策略测试结果_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.xlsx`
-        
+
         saveAs(excelData, filename)
         this.$message({ message: this.$t('table.actionSuccess'), type: 'success' })
       } catch (e) {
