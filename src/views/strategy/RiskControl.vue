@@ -202,7 +202,7 @@
       <el-table-column
         label="操作"
         align="center"
-        width="250"
+        width="350"
       >
         <template slot-scope="scope">
           <el-button
