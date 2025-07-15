@@ -655,6 +655,20 @@ export default {
         this.total = response.data.total || 0
         
         console.log('Data fetched successfully, total:', this.total, 'list length:', this.list.length)
+        
+        // 调试：检查每个记录的关键字段
+        console.log('=== DATA FETCH DEBUG ===')
+        this.list.forEach((item, index) => {
+          console.log(`Record ${index + 1}:`, {
+            id: item.id,
+            symbol: item.symbol,
+            strategy_name: item.strategy_name,
+            trade_type: item.trade_type,
+            freeze_on_loss_count: item.freeze_on_loss_count,
+            freeze_hours: item.freeze_hours
+          })
+        })
+        
       } catch (error) {
         console.error('Fetch data error:', error)
         this.list = []
@@ -690,15 +704,32 @@ export default {
     async saveRow(row) {
       row.saving = true
       try {
-        await updateStrategyFreeze(row.id, {
+        console.log('=== SAVE ROW DEBUG ===')
+        console.log('Saving row data:', row)
+        console.log('Row ID:', row.id)
+        
+        // 只更新数值字段，不更新币种和策略字段
+        const updateData = {
           freeze_on_loss_count: row.freeze_on_loss_count,
           freeze_hours: row.freeze_hours,
           loss_count: row.loss_count || 0,
-        })
+        }
+        
+        console.log('Update data (only numeric fields):', updateData)
+        
+        await updateStrategyFreeze(row.id, updateData)
         row.changed = false
         this.$message.success('保存成功')
-        this.fetchData()
+        
+        // 只刷新当前行的数据，避免影响其他行
+        await this.fetchData()
+        
       } catch (error) {
+        console.error('=== SAVE ROW ERROR ===')
+        console.error('Error details:', error)
+        console.error('Error response:', error.response)
+        console.error('Error data:', error.response?.data)
+        
         this.$message.error('保存失败，请重试')
       } finally {
         row.saving = false
@@ -816,6 +847,9 @@ export default {
       this.dialogVisible = true
     },
     resetForm() {
+      console.log('=== RESET FORM DEBUG ===')
+      console.log('Form before reset:', this.form)
+      
       this.form = {
         symbol: '',
         strategy_name: '',
@@ -823,11 +857,16 @@ export default {
         freeze_on_loss_count: 1,
         freeze_hours: 1,
       }
+      
+      console.log('Form after reset:', this.form)
+      
       if (this.$refs.form) {
         this.$refs.form.resetFields()
       }
     },
     handleDialogClose() {
+      console.log('=== DIALOG CLOSE DEBUG ===')
+      console.log('Dialog closed, form before reset:', this.form)
       this.resetForm()
     },
     async submitForm() {
@@ -835,49 +874,75 @@ export default {
         await this.$refs.form.validate()
         this.submitLoading = true
         
-        // 直接提交表单数据，不做任何复杂的处理
-        const submitData = {
-          symbol: this.form.symbol,
-          strategy_name: this.form.strategy_name,
-          trade_type: this.form.trade_type,
-          freeze_on_loss_count: this.form.freeze_on_loss_count,
-          freeze_hours: this.form.freeze_hours
-        }
-        
         console.log('=== FORM SUBMISSION DEBUG ===')
-        console.log('Form values before submission:', this.form)
-        console.log('Data being submitted to API:', submitData)
-        console.log('Form validation passed')
+        console.log('Form before processing:', JSON.stringify(this.form, null, 2))
+        console.log('Is edit mode:', this.isEdit)
         
-        // 验证关键字段不能为空
-        if (!submitData.symbol || !submitData.strategy_name || !submitData.trade_type) {
-          console.error('Validation failed - missing required fields:', {
-            symbol: submitData.symbol,
-            strategy_name: submitData.strategy_name,
-            trade_type: submitData.trade_type
-          })
-          this.$message.error('请完整填写币种、策略和交易类型')
-          return
+        let response
+        
+        if (this.isEdit) {
+          // 编辑模式：使用PUT请求只更新数值字段
+          const updateData = {
+            freeze_on_loss_count: this.form.freeze_on_loss_count,
+            freeze_hours: this.form.freeze_hours
+          }
+          console.log('Edit mode - updating only numeric fields:', updateData)
+          response = await updateStrategyFreeze(this.form.id, updateData)
+        } else {
+          // 新增模式：使用POST请求提交全部字段
+          const createData = {
+            symbol: this.form.symbol,
+            strategy_name: this.form.strategy_name,
+            trade_type: this.form.trade_type,
+            freeze_on_loss_count: this.form.freeze_on_loss_count,
+            freeze_hours: this.form.freeze_hours
+          }
+          console.log('Create mode - submitting all fields:', createData)
+          
+          // 验证创建模式的关键字段
+          if (!createData.symbol || !createData.strategy_name || !createData.trade_type) {
+            console.error('Validation failed - missing required fields:', {
+              symbol: createData.symbol,
+              strategy_name: createData.strategy_name,
+              trade_type: createData.trade_type
+            })
+            this.$message.error('请完整填写币种、策略和交易类型')
+            return
+          }
+          
+          response = await createOrUpdateStrategyFreeze(createData)
         }
         
-        console.log('Calling API...')
-        const response = await createOrUpdateStrategyFreeze(submitData)
         console.log('API response:', response)
-        
         this.$message.success('配置保存成功')
         
         // 如果是编辑模式，关闭对话框
         if (this.isEdit) {
           this.dialogVisible = false
         } else {
-          // 新增模式：保持表单选择，重置数值字段
+          // 新增模式：保存当前选择，便于继续添加
+          const preservedSelections = {
+            symbol: this.form.symbol,
+            strategy_name: this.form.strategy_name,
+            trade_type: this.form.trade_type
+          }
+          
+          // 重置数值字段
           this.form.freeze_on_loss_count = 1
           this.form.freeze_hours = 1
+          
+          // 确保选择字段被保留
+          this.$nextTick(() => {
+            this.form.symbol = preservedSelections.symbol
+            this.form.strategy_name = preservedSelections.strategy_name
+            this.form.trade_type = preservedSelections.trade_type
+          })
+          
           this.$message.success('配置已保存，可以继续添加更多配置')
         }
         
         // 重新获取数据以更新列表
-        this.fetchData()
+        await this.fetchData()
         
       } catch (error) {
         console.error('=== FORM SUBMISSION ERROR ===')
@@ -897,39 +962,51 @@ export default {
         await this.$refs.form.validate()
         this.submitLoading = true
         
-        // 直接提交表单数据
-        const submitData = {
-          symbol: this.form.symbol,
-          strategy_name: this.form.strategy_name,
-          trade_type: this.form.trade_type,
-          freeze_on_loss_count: this.form.freeze_on_loss_count,
-          freeze_hours: this.form.freeze_hours
-        }
-        
         console.log('=== FORM SUBMISSION AND CLOSE DEBUG ===')
-        console.log('Form values before submission:', this.form)
-        console.log('Data being submitted to API:', submitData)
+        console.log('Form before processing:', JSON.stringify(this.form, null, 2))
+        console.log('Is edit mode:', this.isEdit)
         
-        // 验证关键字段不能为空
-        if (!submitData.symbol || !submitData.strategy_name || !submitData.trade_type) {
-          console.error('Validation failed - missing required fields:', {
-            symbol: submitData.symbol,
-            strategy_name: submitData.strategy_name,
-            trade_type: submitData.trade_type
-          })
-          this.$message.error('请完整填写币种、策略和交易类型')
-          return
+        let response
+        
+        if (this.isEdit) {
+          // 编辑模式：使用PUT请求只更新数值字段
+          const updateData = {
+            freeze_on_loss_count: this.form.freeze_on_loss_count,
+            freeze_hours: this.form.freeze_hours
+          }
+          console.log('Edit mode - updating only numeric fields:', updateData)
+          response = await updateStrategyFreeze(this.form.id, updateData)
+        } else {
+          // 新增模式：使用POST请求提交全部字段
+          const createData = {
+            symbol: this.form.symbol,
+            strategy_name: this.form.strategy_name,
+            trade_type: this.form.trade_type,
+            freeze_on_loss_count: this.form.freeze_on_loss_count,
+            freeze_hours: this.form.freeze_hours
+          }
+          console.log('Create mode - submitting all fields:', createData)
+          
+          // 验证创建模式的关键字段
+          if (!createData.symbol || !createData.strategy_name || !createData.trade_type) {
+            console.error('Validation failed - missing required fields:', {
+              symbol: createData.symbol,
+              strategy_name: createData.strategy_name,
+              trade_type: createData.trade_type
+            })
+            this.$message.error('请完整填写币种、策略和交易类型')
+            return
+          }
+          
+          response = await createOrUpdateStrategyFreeze(createData)
         }
         
-        console.log('Calling API...')
-        const response = await createOrUpdateStrategyFreeze(submitData)
         console.log('API response:', response)
-        
         this.$message.success('配置保存成功')
         this.dialogVisible = false
         
         // 重新获取数据以更新列表
-        this.fetchData()
+        await this.fetchData()
         
       } catch (error) {
         console.error('=== FORM SUBMISSION AND CLOSE ERROR ===')
