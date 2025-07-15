@@ -169,7 +169,7 @@ const tradeRouter = [
     path: '/strategy-center',
     component: Layout,
     redirect: '/strategy-center/test-strategy-results',
-    meta: { title: 'strategyCenter', icon: 'form' },
+    meta: { title: 'strategyCenter', icon: 'tree' },
     children: [
       {
         path: 'test-strategy-results',
