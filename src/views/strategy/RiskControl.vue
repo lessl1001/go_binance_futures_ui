@@ -254,7 +254,7 @@
       :title="dialogTitle"
       :visible.sync="dialogVisible"
       width="500px"
-      @close="resetForm"
+      @close="handleDialogClose"
     >
       <el-form
         ref="form"
@@ -312,7 +312,12 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="submitForm">确定</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="submitForm">
+          {{ isEdit ? '更新' : '保存并继续' }}
+        </el-button>
+        <el-button v-if="!isEdit" type="success" :loading="submitLoading" @click="submitAndClose">
+          保存并关闭
+        </el-button>
       </div>
     </el-dialog>
 
@@ -545,11 +550,64 @@ export default {
     async loadOptions() {
       try {
         const response = await getStrategyFreezeOptions()
-        this.symbolOptions = response.data.symbols || []
-        this.strategyOptions = response.data.strategies || []
-        this.tradeTypeOptions = response.data.tradeTypes || []
+        const data = response.data || {}
+        
+        // 确保选项数据格式正确
+        this.symbolOptions = Array.isArray(data.symbols) ? data.symbols : []
+        this.strategyOptions = Array.isArray(data.strategies) ? data.strategies : []
+        this.tradeTypeOptions = Array.isArray(data.tradeTypes) ? data.tradeTypes : []
+        
+        // 如果选项为空，提供默认选项
+        if (this.symbolOptions.length === 0) {
+          this.symbolOptions = [
+            { label: 'BTCUSDT', value: 'BTCUSDT' },
+            { label: 'ETHUSDT', value: 'ETHUSDT' }
+          ]
+        }
+        
+        if (this.strategyOptions.length === 0) {
+          this.strategyOptions = [
+            { label: 'MA_CROSS', value: 'MA_CROSS' },
+            { label: 'RSI_DIVERGENCE', value: 'RSI_DIVERGENCE' }
+          ]
+        }
+        
+        if (this.tradeTypeOptions.length === 0) {
+          this.tradeTypeOptions = [
+            { label: '实盘', value: 'real' },
+            { label: '测试', value: 'test' }
+          ]
+        }
+        
+        console.log('Options loaded successfully:', {
+          symbols: this.symbolOptions.length,
+          strategies: this.strategyOptions.length,
+          tradeTypes: this.tradeTypeOptions.length
+        })
+        
       } catch (error) {
         console.error('Failed to load options:', error)
+        this.$message.warning('加载选项失败，使用默认选项')
+        
+        // 提供默认选项作为备用
+        this.symbolOptions = [
+          { label: 'BTCUSDT', value: 'BTCUSDT' },
+          { label: 'ETHUSDT', value: 'ETHUSDT' },
+          { label: 'ADAUSDT', value: 'ADAUSDT' },
+          { label: 'BNBUSDT', value: 'BNBUSDT' }
+        ]
+        
+        this.strategyOptions = [
+          { label: 'MA_CROSS', value: 'MA_CROSS' },
+          { label: 'RSI_DIVERGENCE', value: 'RSI_DIVERGENCE' },
+          { label: 'BOLLINGER_BANDS', value: 'BOLLINGER_BANDS' },
+          { label: 'MACD_SIGNAL', value: 'MACD_SIGNAL' }
+        ]
+        
+        this.tradeTypeOptions = [
+          { label: '实盘', value: 'real' },
+          { label: '测试', value: 'test' }
+        ]
       }
     },
     async fetchData() {
@@ -688,14 +746,61 @@ export default {
         }
       }
     },
-    handleAdd() {
+    async handleAdd() {
       this.dialogTitle = '新增风控配置'
       this.isEdit = false
-      this.dialogVisible = true
+      
+      // 先重置表单
       this.resetForm()
-      this.loadOptions()  // 添加这一行
+      
+      // 确保选项已加载
+      await this.loadOptions()
+      
+      // 显示对话框
+      this.dialogVisible = true
     },
-    resetForm() {
+    async submitAndClose() {
+      try {
+        await this.$refs.form.validate()
+        this.submitLoading = true
+        
+        await createOrUpdateStrategyFreeze(this.form)
+        this.$message.success('操作成功')
+        
+        // 关闭对话框
+        this.dialogVisible = false
+        
+        // 刷新数据和选项
+        await Promise.all([
+          this.fetchData(),
+          this.loadOptions()
+        ])
+      } catch (error) {
+        if (error !== false) {
+          this.$message.error('操作失败，请重试')
+        }
+      } finally {
+        this.submitLoading = false
+      }
+    },
+    handleDialogClose() {
+      // 只有在编辑模式或用户主动关闭时才重置表单
+      if (this.isEdit || !this.submitLoading) {
+        this.resetForm()
+      }
+    },
+      // 只有在编辑模式或用户主动关闭时才重置表单
+      if (this.isEdit || !this.submitLoading) {
+        this.resetForm()
+      }
+    },
+      // 保存当前选择以便可能的恢复
+      const currentSelections = {
+        symbol: this.form.symbol,
+        strategy_name: this.form.strategy_name,
+        trade_type: this.form.trade_type
+      }
+      
       this.form = {
         symbol: '',
         strategy_name: '',
@@ -703,31 +808,54 @@ export default {
         freeze_on_loss_count: 1,
         freeze_hours: 1,
       }
+      
       if (this.$refs.form) {
         this.$refs.form.resetFields()
       }
+      
+      // 返回之前的选择供调用者决定是否恢复
+      return currentSelections
     },
     async submitForm() {
-  try {
-    await this.$refs.form.validate()
-    this.submitLoading = true
-    
-    await createOrUpdateStrategyFreeze(this.form)
-    this.$message.success('操作成功')
-    this.dialogVisible = false
-    // 同时刷新数据和选项
-    await Promise.all([
-      this.fetchData(),
-      this.loadOptions()  // 添加这一行
-    ])
-  } catch (error) {
-    if (error !== false) {
-      this.$message.error('操作失败，请重试')
-    }
-  } finally {
-    this.submitLoading = false
-  }
-},
+      try {
+        await this.$refs.form.validate()
+        this.submitLoading = true
+        
+        // 保存当前选择以便后续恢复
+        const currentSelections = {
+          symbol: this.form.symbol,
+          strategy_name: this.form.strategy_name,
+          trade_type: this.form.trade_type
+        }
+        
+        await createOrUpdateStrategyFreeze(this.form)
+        this.$message.success('操作成功')
+        
+        // 先刷新数据和选项，然后再关闭对话框
+        await Promise.all([
+          this.fetchData(),
+          this.loadOptions()
+        ])
+        
+        // 如果是新增模式，保持对话框打开并恢复选择，方便用户继续添加
+        if (!this.isEdit) {
+          this.form.symbol = currentSelections.symbol
+          this.form.strategy_name = currentSelections.strategy_name
+          this.form.trade_type = currentSelections.trade_type
+          // 重置数值字段为默认值
+          this.form.freeze_on_loss_count = 1
+          this.form.freeze_hours = 1
+        } else {
+          this.dialogVisible = false
+        }
+      } catch (error) {
+        if (error !== false) {
+          this.$message.error('操作失败，请重试')
+        }
+      } finally {
+        this.submitLoading = false
+      }
+    },
     async loadLogs() {
       this.logsLoading = true
       try {
