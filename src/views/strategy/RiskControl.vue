@@ -527,82 +527,79 @@ export default {
   },
   methods: {
     async loadOptions() {
+      console.log('=== LOADING OPTIONS ===')
+      
+      // 首先设置默认选项，确保界面总是有可用选项
+      this.symbolOptions = [
+        { label: 'BTCUSDT', value: 'BTCUSDT' },
+        { label: 'ETHUSDT', value: 'ETHUSDT' },
+        { label: 'ADAUSDT', value: 'ADAUSDT' },
+        { label: 'BNBUSDT', value: 'BNBUSDT' },
+        { label: 'SOLUSDT', value: 'SOLUSDT' },
+        { label: 'DOGEUSDT', value: 'DOGEUSDT' }
+      ]
+      
+      this.strategyOptions = [
+        { label: 'MA_CROSS', value: 'MA_CROSS' },
+        { label: 'RSI_DIVERGENCE', value: 'RSI_DIVERGENCE' },
+        { label: 'BOLLINGER_BANDS', value: 'BOLLINGER_BANDS' },
+        { label: 'MACD_SIGNAL', value: 'MACD_SIGNAL' },
+        { label: 'GRID_TRADING', value: 'GRID_TRADING' },
+        { label: 'DCA_STRATEGY', value: 'DCA_STRATEGY' }
+      ]
+      
+      this.tradeTypeOptions = [
+        { label: '实盘', value: 'real' },
+        { label: '测试', value: 'test' }
+      ]
+      
+      console.log('Default options set:', {
+        symbols: this.symbolOptions.length,
+        strategies: this.strategyOptions.length,
+        tradeTypes: this.tradeTypeOptions.length
+      })
+      
+      // 尝试从API获取选项来替换默认选项
       try {
-        console.log('Loading options...')
+        console.log('Attempting to load options from API...')
         const response = await getStrategyFreezeOptions()
         const data = response.data || {}
         
         console.log('Options API response:', data)
         
-        // 确保选项数据格式正确
-        this.symbolOptions = Array.isArray(data.symbols) ? data.symbols : []
-        this.strategyOptions = Array.isArray(data.strategies) ? data.strategies : []
-        this.tradeTypeOptions = Array.isArray(data.tradeTypes) ? data.tradeTypes : []
-        
-        // 如果选项为空，提供默认选项
-        if (this.symbolOptions.length === 0) {
-          this.symbolOptions = [
-            { label: 'BTCUSDT', value: 'BTCUSDT' },
-            { label: 'ETHUSDT', value: 'ETHUSDT' },
-            { label: 'ADAUSDT', value: 'ADAUSDT' },
-            { label: 'BNBUSDT', value: 'BNBUSDT' },
-            { label: 'SOLUSDT', value: 'SOLUSDT' },
-            { label: 'DOGEUSDT', value: 'DOGEUSDT' }
-          ]
+        // 只有当API返回有效数据时才替换默认选项
+        if (Array.isArray(data.symbols) && data.symbols.length > 0) {
+          this.symbolOptions = data.symbols
+          console.log('Updated symbol options from API:', data.symbols.length)
+        } else {
+          console.log('API returned empty symbols, keeping defaults')
         }
         
-        if (this.strategyOptions.length === 0) {
-          this.strategyOptions = [
-            { label: 'MA_CROSS', value: 'MA_CROSS' },
-            { label: 'RSI_DIVERGENCE', value: 'RSI_DIVERGENCE' },
-            { label: 'BOLLINGER_BANDS', value: 'BOLLINGER_BANDS' },
-            { label: 'MACD_SIGNAL', value: 'MACD_SIGNAL' },
-            { label: 'GRID_TRADING', value: 'GRID_TRADING' },
-            { label: 'DCA_STRATEGY', value: 'DCA_STRATEGY' }
-          ]
+        if (Array.isArray(data.strategies) && data.strategies.length > 0) {
+          this.strategyOptions = data.strategies
+          console.log('Updated strategy options from API:', data.strategies.length)
+        } else {
+          console.log('API returned empty strategies, keeping defaults')
         }
         
-        if (this.tradeTypeOptions.length === 0) {
-          this.tradeTypeOptions = [
-            { label: '实盘', value: 'real' },
-            { label: '测试', value: 'test' }
-          ]
+        if (Array.isArray(data.tradeTypes) && data.tradeTypes.length > 0) {
+          this.tradeTypeOptions = data.tradeTypes
+          console.log('Updated trade type options from API:', data.tradeTypes.length)
+        } else {
+          console.log('API returned empty trade types, keeping defaults')
         }
-        
-        console.log('Options loaded successfully:', {
-          symbols: this.symbolOptions.length,
-          strategies: this.strategyOptions.length,
-          tradeTypes: this.tradeTypeOptions.length
-        })
         
       } catch (error) {
-        console.error('Failed to load options:', error)
-        this.$message.warning('加载选项失败，使用默认选项')
-        
-        // 提供默认选项作为备用
-        this.symbolOptions = [
-          { label: 'BTCUSDT', value: 'BTCUSDT' },
-          { label: 'ETHUSDT', value: 'ETHUSDT' },
-          { label: 'ADAUSDT', value: 'ADAUSDT' },
-          { label: 'BNBUSDT', value: 'BNBUSDT' },
-          { label: 'SOLUSDT', value: 'SOLUSDT' },
-          { label: 'DOGEUSDT', value: 'DOGEUSDT' }
-        ]
-        
-        this.strategyOptions = [
-          { label: 'MA_CROSS', value: 'MA_CROSS' },
-          { label: 'RSI_DIVERGENCE', value: 'RSI_DIVERGENCE' },
-          { label: 'BOLLINGER_BANDS', value: 'BOLLINGER_BANDS' },
-          { label: 'MACD_SIGNAL', value: 'MACD_SIGNAL' },
-          { label: 'GRID_TRADING', value: 'GRID_TRADING' },
-          { label: 'DCA_STRATEGY', value: 'DCA_STRATEGY' }
-        ]
-        
-        this.tradeTypeOptions = [
-          { label: '实盘', value: 'real' },
-          { label: '测试', value: 'test' }
-        ]
+        console.error('Failed to load options from API:', error)
+        console.log('Using default options due to API failure')
+        // 默认选项已经设置，不需要额外处理
       }
+      
+      console.log('Final options loaded:', {
+        symbols: this.symbolOptions.length,
+        strategies: this.strategyOptions.length,
+        tradeTypes: this.tradeTypeOptions.length
+      })
     },
     async fetchData() {
       this.listLoading = true
@@ -841,15 +838,35 @@ export default {
       }
     },
     async handleAdd() {
+      console.log('=== HANDLE ADD START ===')
+      
       this.dialogTitle = '新增风控配置'
       this.isEdit = false
+      
+      // 重置表单
       this.resetForm()
+      
+      // 确保选项已加载
+      if (this.symbolOptions.length === 0 || this.strategyOptions.length === 0) {
+        console.log('Options not loaded, loading now...')
+        await this.loadOptions()
+      }
+      
+      console.log('Available options:', {
+        symbols: this.symbolOptions.length,
+        strategies: this.strategyOptions.length,
+        tradeTypes: this.tradeTypeOptions.length
+      })
+      
       this.dialogVisible = true
+      
+      console.log('=== HANDLE ADD END ===')
     },
     resetForm() {
-      console.log('=== RESET FORM DEBUG ===')
-      console.log('Form before reset:', this.form)
+      console.log('=== RESET FORM START ===')
+      console.log('Form before reset:', JSON.stringify(this.form, null, 2))
       
+      // 强制重置表单数据
       this.form = {
         symbol: '',
         strategy_name: '',
@@ -858,11 +875,14 @@ export default {
         freeze_hours: 1,
       }
       
-      console.log('Form after reset:', this.form)
-      
+      // 清除表单验证状态
       if (this.$refs.form) {
         this.$refs.form.resetFields()
+        this.$refs.form.clearValidate()
       }
+      
+      console.log('Form after reset:', JSON.stringify(this.form, null, 2))
+      console.log('=== RESET FORM END ===')
     },
     handleDialogClose() {
       console.log('=== DIALOG CLOSE DEBUG ===')
@@ -870,57 +890,109 @@ export default {
       this.resetForm()
     },
     async submitForm() {
+      console.log('=== FORM SUBMISSION START ===')
+      
       try {
+        // 表单验证
         await this.$refs.form.validate()
+        console.log('Form validation passed')
+        
         this.submitLoading = true
         
-        console.log('=== FORM SUBMISSION DEBUG ===')
-        console.log('Form before processing:', JSON.stringify(this.form, null, 2))
-        console.log('Is edit mode:', this.isEdit)
+        // 详细打印表单数据
+        console.log('Form data before processing:', {
+          symbol: this.form.symbol,
+          strategy_name: this.form.strategy_name,
+          trade_type: this.form.trade_type,
+          freeze_on_loss_count: this.form.freeze_on_loss_count,
+          freeze_hours: this.form.freeze_hours,
+          isEdit: this.isEdit
+        })
+        
+        // 验证关键字段不为空
+        if (!this.form.symbol || !this.form.strategy_name || !this.form.trade_type) {
+          const missingFields = []
+          if (!this.form.symbol) missingFields.push('币种')
+          if (!this.form.strategy_name) missingFields.push('策略')
+          if (!this.form.trade_type) missingFields.push('交易类型')
+          
+          console.error('=== VALIDATION FAILED ===')
+          console.error('Missing fields:', missingFields)
+          console.error('Form state:', this.form)
+          
+          this.$message.error(`请填写完整信息，缺少：${missingFields.join(', ')}`)
+          return
+        }
+        
+        // 验证数值字段
+        if (!this.form.freeze_on_loss_count || this.form.freeze_on_loss_count <= 0) {
+          console.error('Invalid freeze_on_loss_count:', this.form.freeze_on_loss_count)
+          this.$message.error('连续亏损阈值必须大于0')
+          return
+        }
+        
+        if (!this.form.freeze_hours || this.form.freeze_hours <= 0) {
+          console.error('Invalid freeze_hours:', this.form.freeze_hours)
+          this.$message.error('冻结时长必须大于0')
+          return
+        }
+        
+        console.log('All validations passed')
         
         let response
         
         if (this.isEdit) {
-          // 编辑模式：使用PUT请求只更新数值字段
+          // 编辑模式：只更新数值字段
           const updateData = {
-            freeze_on_loss_count: this.form.freeze_on_loss_count,
-            freeze_hours: this.form.freeze_hours
+            freeze_on_loss_count: Number(this.form.freeze_on_loss_count),
+            freeze_hours: Number(this.form.freeze_hours)
           }
-          console.log('Edit mode - updating only numeric fields:', updateData)
-          response = await updateStrategyFreeze(this.form.id, updateData)
-        } else {
-          // 新增模式：使用POST请求提交全部字段
-          const createData = {
-            symbol: this.form.symbol,
-            strategy_name: this.form.strategy_name,
-            trade_type: this.form.trade_type,
-            freeze_on_loss_count: this.form.freeze_on_loss_count,
-            freeze_hours: this.form.freeze_hours
-          }
-          console.log('Create mode - submitting all fields:', createData)
           
-          // 验证创建模式的关键字段
+          console.log('=== EDIT MODE ===')
+          console.log('Update data:', updateData)
+          console.log('Target ID:', this.form.id)
+          
+          if (!this.form.id) {
+            console.error('Missing ID for edit operation')
+            this.$message.error('编辑失败：缺少记录ID')
+            return
+          }
+          
+          response = await updateStrategyFreeze(this.form.id, updateData)
+          console.log('Update response:', response)
+          
+        } else {
+          // 新增模式：提交全部字段
+          const createData = {
+            symbol: this.form.symbol.trim(),
+            strategy_name: this.form.strategy_name.trim(),
+            trade_type: this.form.trade_type.trim(),
+            freeze_on_loss_count: Number(this.form.freeze_on_loss_count),
+            freeze_hours: Number(this.form.freeze_hours)
+          }
+          
+          console.log('=== CREATE MODE ===')
+          console.log('Create data:', createData)
+          console.log('Data types:', {
+            symbol: typeof createData.symbol,
+            strategy_name: typeof createData.strategy_name,
+            trade_type: typeof createData.trade_type,
+            freeze_on_loss_count: typeof createData.freeze_on_loss_count,
+            freeze_hours: typeof createData.freeze_hours
+          })
+          
+          // 再次验证创建数据
           if (!createData.symbol || !createData.strategy_name || !createData.trade_type) {
-            console.error('Validation failed - missing required fields:', {
-              symbol: createData.symbol,
-              strategy_name: createData.strategy_name,
-              trade_type: createData.trade_type
-            })
-            this.$message.error('请完整填写币种、策略和交易类型')
+            console.error('=== CREATE DATA VALIDATION FAILED ===')
+            console.error('Create data after trim:', createData)
+            this.$message.error('创建失败：关键字段为空')
             return
           }
           
           response = await createOrUpdateStrategyFreeze(createData)
-        }
-        
-        console.log('API response:', response)
-        this.$message.success('配置保存成功')
-        
-        // 如果是编辑模式，关闭对话框
-        if (this.isEdit) {
-          this.dialogVisible = false
-        } else {
-          // 新增模式：保存当前选择，便于继续添加
+          console.log('Create response:', response)
+          
+          // 保存当前选择以便继续添加
           const preservedSelections = {
             symbol: this.form.symbol,
             strategy_name: this.form.strategy_name,
@@ -936,89 +1008,173 @@ export default {
             this.form.symbol = preservedSelections.symbol
             this.form.strategy_name = preservedSelections.strategy_name
             this.form.trade_type = preservedSelections.trade_type
+            
+            console.log('Form selections preserved:', {
+              symbol: this.form.symbol,
+              strategy_name: this.form.strategy_name,
+              trade_type: this.form.trade_type
+            })
           })
           
           this.$message.success('配置已保存，可以继续添加更多配置')
         }
         
-        // 重新获取数据以更新列表
+        console.log('=== FORM SUBMISSION SUCCESS ===')
+        console.log('API Response:', response)
+        
+        if (this.isEdit) {
+          this.$message.success('配置更新成功')
+          this.dialogVisible = false
+        } else {
+          this.$message.success('配置创建成功')
+        }
+        
+        // 重新获取数据
         await this.fetchData()
         
       } catch (error) {
         console.error('=== FORM SUBMISSION ERROR ===')
         console.error('Error details:', error)
+        console.error('Error message:', error.message)
         console.error('Error response:', error.response)
         console.error('Error data:', error.response?.data)
         
         if (error !== false) {
-          this.$message.error('保存失败，请重试')
+          const errorMessage = error.response?.data?.message || error.message || '保存失败'
+          this.$message.error(`操作失败：${errorMessage}`)
         }
       } finally {
         this.submitLoading = false
+        console.log('=== FORM SUBMISSION END ===')
       }
     },
     async submitAndClose() {
+      console.log('=== FORM SUBMISSION AND CLOSE START ===')
+      
       try {
+        // 表单验证
         await this.$refs.form.validate()
+        console.log('Form validation passed')
+        
         this.submitLoading = true
         
-        console.log('=== FORM SUBMISSION AND CLOSE DEBUG ===')
-        console.log('Form before processing:', JSON.stringify(this.form, null, 2))
-        console.log('Is edit mode:', this.isEdit)
+        // 详细打印表单数据
+        console.log('Form data before processing:', {
+          symbol: this.form.symbol,
+          strategy_name: this.form.strategy_name,
+          trade_type: this.form.trade_type,
+          freeze_on_loss_count: this.form.freeze_on_loss_count,
+          freeze_hours: this.form.freeze_hours,
+          isEdit: this.isEdit
+        })
+        
+        // 验证关键字段不为空
+        if (!this.form.symbol || !this.form.strategy_name || !this.form.trade_type) {
+          const missingFields = []
+          if (!this.form.symbol) missingFields.push('币种')
+          if (!this.form.strategy_name) missingFields.push('策略')
+          if (!this.form.trade_type) missingFields.push('交易类型')
+          
+          console.error('=== VALIDATION FAILED ===')
+          console.error('Missing fields:', missingFields)
+          console.error('Form state:', this.form)
+          
+          this.$message.error(`请填写完整信息，缺少：${missingFields.join(', ')}`)
+          return
+        }
+        
+        // 验证数值字段
+        if (!this.form.freeze_on_loss_count || this.form.freeze_on_loss_count <= 0) {
+          console.error('Invalid freeze_on_loss_count:', this.form.freeze_on_loss_count)
+          this.$message.error('连续亏损阈值必须大于0')
+          return
+        }
+        
+        if (!this.form.freeze_hours || this.form.freeze_hours <= 0) {
+          console.error('Invalid freeze_hours:', this.form.freeze_hours)
+          this.$message.error('冻结时长必须大于0')
+          return
+        }
+        
+        console.log('All validations passed')
         
         let response
         
         if (this.isEdit) {
-          // 编辑模式：使用PUT请求只更新数值字段
+          // 编辑模式：只更新数值字段
           const updateData = {
-            freeze_on_loss_count: this.form.freeze_on_loss_count,
-            freeze_hours: this.form.freeze_hours
+            freeze_on_loss_count: Number(this.form.freeze_on_loss_count),
+            freeze_hours: Number(this.form.freeze_hours)
           }
-          console.log('Edit mode - updating only numeric fields:', updateData)
-          response = await updateStrategyFreeze(this.form.id, updateData)
-        } else {
-          // 新增模式：使用POST请求提交全部字段
-          const createData = {
-            symbol: this.form.symbol,
-            strategy_name: this.form.strategy_name,
-            trade_type: this.form.trade_type,
-            freeze_on_loss_count: this.form.freeze_on_loss_count,
-            freeze_hours: this.form.freeze_hours
-          }
-          console.log('Create mode - submitting all fields:', createData)
           
-          // 验证创建模式的关键字段
+          console.log('=== EDIT MODE ===')
+          console.log('Update data:', updateData)
+          console.log('Target ID:', this.form.id)
+          
+          if (!this.form.id) {
+            console.error('Missing ID for edit operation')
+            this.$message.error('编辑失败：缺少记录ID')
+            return
+          }
+          
+          response = await updateStrategyFreeze(this.form.id, updateData)
+          console.log('Update response:', response)
+          
+        } else {
+          // 新增模式：提交全部字段
+          const createData = {
+            symbol: this.form.symbol.trim(),
+            strategy_name: this.form.strategy_name.trim(),
+            trade_type: this.form.trade_type.trim(),
+            freeze_on_loss_count: Number(this.form.freeze_on_loss_count),
+            freeze_hours: Number(this.form.freeze_hours)
+          }
+          
+          console.log('=== CREATE MODE ===')
+          console.log('Create data:', createData)
+          console.log('Data types:', {
+            symbol: typeof createData.symbol,
+            strategy_name: typeof createData.strategy_name,
+            trade_type: typeof createData.trade_type,
+            freeze_on_loss_count: typeof createData.freeze_on_loss_count,
+            freeze_hours: typeof createData.freeze_hours
+          })
+          
+          // 再次验证创建数据
           if (!createData.symbol || !createData.strategy_name || !createData.trade_type) {
-            console.error('Validation failed - missing required fields:', {
-              symbol: createData.symbol,
-              strategy_name: createData.strategy_name,
-              trade_type: createData.trade_type
-            })
-            this.$message.error('请完整填写币种、策略和交易类型')
+            console.error('=== CREATE DATA VALIDATION FAILED ===')
+            console.error('Create data after trim:', createData)
+            this.$message.error('创建失败：关键字段为空')
             return
           }
           
           response = await createOrUpdateStrategyFreeze(createData)
+          console.log('Create response:', response)
         }
         
-        console.log('API response:', response)
+        console.log('=== FORM SUBMISSION AND CLOSE SUCCESS ===')
+        console.log('API Response:', response)
+        
         this.$message.success('配置保存成功')
         this.dialogVisible = false
         
-        // 重新获取数据以更新列表
+        // 重新获取数据
         await this.fetchData()
         
       } catch (error) {
         console.error('=== FORM SUBMISSION AND CLOSE ERROR ===')
         console.error('Error details:', error)
+        console.error('Error message:', error.message)
         console.error('Error response:', error.response)
         console.error('Error data:', error.response?.data)
         
         if (error !== false) {
-          this.$message.error('保存失败，请重试')
+          const errorMessage = error.response?.data?.message || error.message || '保存失败'
+          this.$message.error(`操作失败：${errorMessage}`)
         }
       } finally {
         this.submitLoading = false
+        console.log('=== FORM SUBMISSION AND CLOSE END ===')
       }
     },
     async loadLogs() {
