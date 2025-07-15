@@ -90,6 +90,8 @@ module.exports = [
     response: (req) => {
       const { symbol, strategy_name, trade_type, page = 1, pageSize = 20 } = req.query
       
+      console.log('GET request to fetch logs:', { symbol, strategy_name, trade_type, page, pageSize })
+      
       let filteredLogs = operationLogs.filter(log => {
         if (symbol && log.symbol !== symbol) return false
         if (strategy_name && log.strategy_name !== strategy_name) return false
@@ -100,6 +102,8 @@ module.exports = [
       const start = (page - 1) * pageSize
       const end = start + parseInt(pageSize)
       const list = filteredLogs.slice(start, end)
+
+      console.log('Returning logs:', list)
 
       return {
         code: 200,
@@ -118,30 +122,36 @@ module.exports = [
     url: '/strategy-freeze/options',
     type: 'get',
     response: () => {
+      console.log('GET request to fetch options')
+      
+      const optionsData = {
+        symbols: [
+          { label: 'BTCUSDT', value: 'BTCUSDT' },
+          { label: 'ETHUSDT', value: 'ETHUSDT' },
+          { label: 'ADAUSDT', value: 'ADAUSDT' },
+          { label: 'BNBUSDT', value: 'BNBUSDT' },
+          { label: 'SOLUSDT', value: 'SOLUSDT' },
+          { label: 'DOGEUSDT', value: 'DOGEUSDT' }
+        ],
+        strategies: [
+          { label: 'MA_CROSS', value: 'MA_CROSS' },
+          { label: 'RSI_DIVERGENCE', value: 'RSI_DIVERGENCE' },
+          { label: 'BOLLINGER_BANDS', value: 'BOLLINGER_BANDS' },
+          { label: 'MACD_SIGNAL', value: 'MACD_SIGNAL' },
+          { label: 'GRID_TRADING', value: 'GRID_TRADING' },
+          { label: 'DCA_STRATEGY', value: 'DCA_STRATEGY' }
+        ],
+        tradeTypes: [
+          { label: '实盘', value: 'real' },
+          { label: '测试', value: 'test' }
+        ]
+      }
+      
+      console.log('Returning options:', optionsData)
+      
       return {
         code: 200,
-        data: {
-          symbols: [
-            { label: 'BTCUSDT', value: 'BTCUSDT' },
-            { label: 'ETHUSDT', value: 'ETHUSDT' },
-            { label: 'ADAUSDT', value: 'ADAUSDT' },
-            { label: 'BNBUSDT', value: 'BNBUSDT' },
-            { label: 'SOLUSDT', value: 'SOLUSDT' },
-            { label: 'DOGEUSDT', value: 'DOGEUSDT' }
-          ],
-          strategies: [
-            { label: 'MA_CROSS', value: 'MA_CROSS' },
-            { label: 'RSI_DIVERGENCE', value: 'RSI_DIVERGENCE' },
-            { label: 'BOLLINGER_BANDS', value: 'BOLLINGER_BANDS' },
-            { label: 'MACD_SIGNAL', value: 'MACD_SIGNAL' },
-            { label: 'GRID_TRADING', value: 'GRID_TRADING' },
-            { label: 'DCA_STRATEGY', value: 'DCA_STRATEGY' }
-          ],
-          tradeTypes: [
-            { label: '实盘', value: 'real' },
-            { label: '测试', value: 'test' }
-          ]
-        }
+        data: optionsData
       }
     }
   },
@@ -333,15 +343,20 @@ module.exports = [
 
   // Update strategy freeze config by ID
   {
-    url: '/strategy-freeze/\\d+',
+    url: '/strategy-freeze/([0-9]+)',
     type: 'put',
     response: (req) => {
-      const id = parseInt(req.url.split('/').pop())
+      const urlParts = req.url.split('/')
+      const id = parseInt(urlParts[urlParts.length - 1])
       const { freeze_on_loss_count, freeze_hours, loss_count } = req.body
+      
+      console.log('PUT request to update config:', { id, freeze_on_loss_count, freeze_hours, loss_count })
       
       const config = strategyFreezeConfigs.find(config => config.id === id)
       
       if (config) {
+        console.log('Found config before update:', config)
+        
         const oldValues = {
           freeze_on_loss_count: config.freeze_on_loss_count,
           freeze_hours: config.freeze_hours,
@@ -354,6 +369,8 @@ module.exports = [
           config.loss_count = loss_count
         }
         config.updated_at = new Date().toISOString()
+
+        console.log('Config after update:', config)
 
         // Add log
         operationLogs.unshift({
@@ -372,6 +389,7 @@ module.exports = [
           data: config
         }
       } else {
+        console.log('Config not found for id:', id)
         return {
           code: 404,
           message: 'Configuration not found'
@@ -382,10 +400,11 @@ module.exports = [
 
   // Delete strategy freeze config
   {
-    url: '/strategy-freeze/\\d+',
+    url: '/strategy-freeze/([0-9]+)',
     type: 'delete',
     response: (req) => {
-      const id = parseInt(req.url.split('/').pop())
+      const urlParts = req.url.split('/')
+      const id = parseInt(urlParts[urlParts.length - 1])
       const configIndex = strategyFreezeConfigs.findIndex(config => config.id === id)
       
       if (configIndex !== -1) {
@@ -424,6 +443,8 @@ module.exports = [
     response: (req) => {
       const { symbol, strategy_name, trade_type, page = 1, pageSize = 20 } = req.query
       
+      console.log('GET request to fetch configs:', { symbol, strategy_name, trade_type, page, pageSize })
+      
       let filteredConfigs = strategyFreezeConfigs.filter(config => {
         if (symbol && config.symbol !== symbol) return false
         if (strategy_name && config.strategy_name !== strategy_name) return false
@@ -434,6 +455,8 @@ module.exports = [
       const start = (page - 1) * pageSize
       const end = start + parseInt(pageSize)
       const list = filteredConfigs.slice(start, end)
+
+      console.log('Returning configs:', list)
 
       return {
         code: 200,
