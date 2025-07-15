@@ -80,9 +80,9 @@
         type="primary"
         size="mini"
         :loading="listLoading"
-        @click="fetchData"
+        @click="handleRefresh"
       >
-        刷新
+        刷新数据
       </el-button>
       <el-button
         type="success"
@@ -669,7 +669,12 @@ export default {
       }
     },
     handleFilter() {
+      console.log('Filter triggered with:', this.filterForm)
       this.listQuery.page = 1
+      this.fetchData()
+    },
+    handleRefresh() {
+      console.log('Manual refresh triggered')
       this.fetchData()
     },
     handleParamChange(row) {
@@ -757,10 +762,16 @@ export default {
           type: 'warning',
         })
         
-        console.log('Deleting row with ID:', row.id)
+        console.log('Deleting row with ID:', row.id, 'Row data:', row)
         
         if (!row.id) {
           this.$message.error('删除失败：缺少记录ID')
+          return
+        }
+        
+        // 检查ID是否为有效数字
+        if (isNaN(row.id) || row.id <= 0) {
+          this.$message.error('删除失败：无效的记录ID')
           return
         }
         
@@ -770,13 +781,26 @@ export default {
       } catch (error) {
         if (error !== 'cancel') {
           console.error('Delete error:', error)
+          console.error('Error details:', {
+            message: error.message,
+            response: error.response,
+            status: error.response?.status,
+            data: error.response?.data
+          })
           
-          if (error.response && error.response.status === 404) {
-            this.$message.error('删除失败：记录不存在或已被删除')
-          } else if (error.response && error.response.status === 403) {
-            this.$message.error('删除失败：权限不足')
+          if (error.response) {
+            const status = error.response.status
+            if (status === 404) {
+              this.$message.error('删除失败：记录不存在或已被删除')
+            } else if (status === 403) {
+              this.$message.error('删除失败：权限不足')
+            } else if (status === 500) {
+              this.$message.error('删除失败：服务器内部错误')
+            } else {
+              this.$message.error(`删除失败：HTTP ${status} 错误`)
+            }
           } else {
-            this.$message.error('删除失败，请重试')
+            this.$message.error('删除失败：网络错误或服务器无响应')
           }
         }
       }
