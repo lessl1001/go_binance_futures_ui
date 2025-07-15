@@ -568,8 +568,14 @@ export default {
     }
   },
   created() {
+    console.log('=== COMPONENT CREATED ===')
+    console.log('Initializing Strategy Risk Control component')
+    
+    // 加载选项和数据
     this.loadOptions()
     this.fetchData()
+    
+    console.log('=== COMPONENT CREATED END ===')
   },
   beforeDestroy() {
     // Remove any cleanup since we removed auto-refresh
@@ -790,37 +796,65 @@ export default {
       }
     },
     async saveRow(row) {
+      console.log('=== SAVE ROW START ===')
+      console.log('Saving row:', JSON.stringify(row, null, 2))
+      
       row.saving = true
+      
       try {
-        console.log('=== SAVE ROW DEBUG ===')
-        console.log('Saving row data:', row)
-        console.log('Row ID:', row.id)
+        // 验证行数据
+        if (!row.id) {
+          console.error('Save failed: Missing row ID')
+          this.$message.error('保存失败：缺少记录ID')
+          return
+        }
+        
+        // 验证数值字段
+        if (!row.freeze_on_loss_count || row.freeze_on_loss_count <= 0) {
+          console.error('Save failed: Invalid freeze_on_loss_count:', row.freeze_on_loss_count)
+          this.$message.error('连续亏损阈值必须大于0')
+          return
+        }
+        
+        if (!row.freeze_hours || row.freeze_hours <= 0) {
+          console.error('Save failed: Invalid freeze_hours:', row.freeze_hours)
+          this.$message.error('冻结时长必须大于0')
+          return
+        }
         
         // 只更新数值字段，不更新币种和策略字段
         const updateData = {
-          freeze_on_loss_count: row.freeze_on_loss_count,
-          freeze_hours: row.freeze_hours,
+          freeze_on_loss_count: Number(row.freeze_on_loss_count),
+          freeze_hours: Number(row.freeze_hours),
           loss_count: row.loss_count || 0,
         }
         
         console.log('Update data (only numeric fields):', updateData)
+        console.log('Target ID:', row.id)
         
-        await updateStrategyFreeze(row.id, updateData)
+        const response = await updateStrategyFreeze(row.id, updateData)
+        
+        console.log('Save response:', response)
+        
         row.changed = false
         this.$message.success('保存成功')
         
-        // 只刷新当前行的数据，避免影响其他行
+        // 重新获取数据以确保数据同步
         await this.fetchData()
         
       } catch (error) {
         console.error('=== SAVE ROW ERROR ===')
         console.error('Error details:', error)
+        console.error('Error message:', error.message)
         console.error('Error response:', error.response)
         console.error('Error data:', error.response?.data)
         
-        this.$message.error('保存失败，请重试')
+        const errorMessage = error.response?.data?.message || error.message || '保存失败'
+        this.$message.error(`保存失败：${errorMessage}`)
+        
       } finally {
         row.saving = false
+        console.log('=== SAVE ROW END ===')
       }
     },
     async handleUnfreeze(row) {
