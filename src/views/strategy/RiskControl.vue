@@ -493,11 +493,60 @@ export default {
         freeze_hours: 1,
       },
       rules: {
-        symbol: [{ required: true, message: '请选择币种', trigger: 'change' }],
-        strategy_name: [{ required: true, message: '请选择策略', trigger: 'change' }],
-        trade_type: [{ required: true, message: '请选择交易类型', trigger: 'change' }],
-        freeze_on_loss_count: [{ required: true, message: '请输入连续亏损阈值', trigger: 'blur' }],
-        freeze_hours: [{ required: true, message: '请输入冻结时长', trigger: 'blur' }],
+        symbol: [
+          { required: true, message: '请选择币种', trigger: 'change' },
+          { validator: (rule, value, callback) => {
+            if (!value || value.trim() === '') {
+              callback(new Error('币种不能为空'))
+            } else {
+              callback()
+            }
+          }, trigger: 'change' }
+        ],
+        strategy_name: [
+          { required: true, message: '请选择策略', trigger: 'change' },
+          { validator: (rule, value, callback) => {
+            if (!value || value.trim() === '') {
+              callback(new Error('策略不能为空'))
+            } else {
+              callback()
+            }
+          }, trigger: 'change' }
+        ],
+        trade_type: [
+          { required: true, message: '请选择交易类型', trigger: 'change' },
+          { validator: (rule, value, callback) => {
+            if (!value || value.trim() === '') {
+              callback(new Error('交易类型不能为空'))
+            } else {
+              callback()
+            }
+          }, trigger: 'change' }
+        ],
+        freeze_on_loss_count: [
+          { required: true, message: '请输入连续亏损阈值', trigger: 'blur' },
+          { validator: (rule, value, callback) => {
+            if (!value || value <= 0) {
+              callback(new Error('连续亏损阈值必须大于0'))
+            } else if (value > 100) {
+              callback(new Error('连续亏损阈值不能超过100'))
+            } else {
+              callback()
+            }
+          }, trigger: 'blur' }
+        ],
+        freeze_hours: [
+          { required: true, message: '请输入冻结时长', trigger: 'blur' },
+          { validator: (rule, value, callback) => {
+            if (!value || value <= 0) {
+              callback(new Error('冻结时长必须大于0'))
+            } else if (value > 168) {
+              callback(new Error('冻结时长不能超过168小时'))
+            } else {
+              callback()
+            }
+          }, trigger: 'blur' }
+        ],
       },
       showLogsDialog: false,
       logs: [],
@@ -602,14 +651,18 @@ export default {
       })
     },
     async fetchData() {
+      console.log('=== FETCH DATA START ===')
+      
       this.listLoading = true
+      
       try {
+        // 构建查询参数
         const params = {
           page: this.listQuery.page,
           pageSize: this.listQuery.limit,
         }
         
-        // 添加筛选参数到后端查询
+        // 添加筛选参数
         if (this.filterForm.coin) {
           params.symbol = this.filterForm.coin
           console.log('Adding coin filter:', this.filterForm.coin)
@@ -626,15 +679,27 @@ export default {
         console.log('Fetching data with params:', params)
 
         const response = await getStrategyFreezeList(params)
-        console.log('API response:', response)
         
+        console.log('API response received:', {
+          status: response.status,
+          data: response.data
+        })
+        
+        if (!response.data) {
+          console.error('No data in response')
+          throw new Error('API响应数据为空')
+        }
+        
+        // 处理响应数据
         let list = (response.data.list || []).map(item => ({
           ...item,
           changed: false,
           saving: false,
         }))
         
-        // 处理冻结状态筛选（在前端处理，因为需要计算时间）
+        console.log('Processed list:', list.length, 'items')
+        
+        // 处理冻结状态筛选（前端处理）
         if (this.filterForm.freezeStatus) {
           const originalLength = list.length
           list = list.filter(row => {
@@ -651,34 +716,60 @@ export default {
         this.list = list
         this.total = response.data.total || 0
         
-        console.log('Data fetched successfully, total:', this.total, 'list length:', this.list.length)
+        console.log('Data fetched successfully:', {
+          total: this.total,
+          listLength: this.list.length
+        })
         
         // 调试：检查每个记录的关键字段
-        console.log('=== DATA FETCH DEBUG ===')
+        console.log('=== RECORDS INSPECTION ===')
         this.list.forEach((item, index) => {
           console.log(`Record ${index + 1}:`, {
             id: item.id,
-            symbol: item.symbol,
-            strategy_name: item.strategy_name,
-            trade_type: item.trade_type,
+            symbol: item.symbol || '(empty)',
+            strategy_name: item.strategy_name || '(empty)',
+            trade_type: item.trade_type || '(empty)',
             freeze_on_loss_count: item.freeze_on_loss_count,
-            freeze_hours: item.freeze_hours
+            freeze_hours: item.freeze_hours,
+            hasValidId: !!item.id && !isNaN(item.id) && item.id > 0
           })
         })
         
       } catch (error) {
-        console.error('Fetch data error:', error)
+        console.error('=== FETCH DATA ERROR ===')
+        console.error('Error details:', error)
+        console.error('Error message:', error.message)
+        console.error('Error response:', error.response)
+        console.error('Error data:', error.response?.data)
+        
         this.list = []
         this.total = 0
-        this.$message.error('获取风控数据失败')
+        
+        const errorMessage = error.response?.data?.message || error.message || '获取数据失败'
+        this.$message.error(`获取风控数据失败：${errorMessage}`)
+        
       } finally {
         this.listLoading = false
+        console.log('=== FETCH DATA END ===')
       }
     },
     handleFilter() {
-      console.log('Filter triggered with:', this.filterForm)
+      console.log('=== FILTER OPERATION START ===')
+      console.log('Current filter form:', JSON.stringify(this.filterForm, null, 2))
+      console.log('Filter values:', {
+        coin: this.filterForm.coin,
+        strategy: this.filterForm.strategy,
+        tradeType: this.filterForm.tradeType,
+        freezeStatus: this.filterForm.freezeStatus
+      })
+      
+      // 重置到第一页
       this.listQuery.page = 1
+      
+      // 重新获取数据
       this.fetchData()
+      
+      console.log('=== FILTER OPERATION END ===')
     },
     handleParamChange(row) {
       row.changed = true
@@ -775,6 +866,9 @@ export default {
       }
     },
     async handleDelete(row) {
+      console.log('=== DELETE OPERATION START ===')
+      console.log('Delete request for row:', JSON.stringify(row, null, 2))
+      
       try {
         await this.$confirm('确定要删除该配置吗？删除后无法恢复！', '确认删除', {
           confirmButtonText: '确定',
@@ -782,32 +876,40 @@ export default {
           type: 'warning',
         })
         
-        console.log('=== DELETE OPERATION DEBUG ===')
-        console.log('Deleting row:', row)
-        console.log('Row ID:', row.id)
-        console.log('Row data:', JSON.stringify(row, null, 2))
+        // 验证行数据完整性
+        if (!row) {
+          console.error('Delete failed: Row is null or undefined')
+          this.$message.error('删除失败：行数据不存在')
+          return
+        }
         
         if (!row.id) {
           console.error('Delete failed: Missing row ID')
+          console.error('Row data:', row)
           this.$message.error('删除失败：缺少记录ID')
           return
         }
         
         // 检查ID是否为有效数字
-        if (isNaN(row.id) || row.id <= 0) {
+        const id = Number(row.id)
+        if (isNaN(id) || id <= 0) {
           console.error('Delete failed: Invalid row ID:', row.id)
           this.$message.error('删除失败：无效的记录ID')
           return
         }
         
-        console.log('Calling delete API with ID:', row.id)
-        await deleteStrategyFreeze(row.id)
+        console.log('Delete validation passed, calling API with ID:', id)
         
-        console.log('Delete API call successful')
+        // 调用删除API
+        const response = await deleteStrategyFreeze(id)
+        
+        console.log('Delete API response:', response)
+        console.log('Delete operation successful')
+        
         this.$message.success('删除成功')
         
         // 重新获取数据
-        this.fetchData()
+        await this.fetchData()
         
       } catch (error) {
         if (error !== 'cancel') {
@@ -818,24 +920,40 @@ export default {
           console.error('Error status:', error.response?.status)
           console.error('Error data:', error.response?.data)
           
+          let errorMessage = '删除失败：未知错误'
+          
           if (error.response) {
             const status = error.response.status
-            const errorMessage = error.response.data?.message || error.response.data?.error || '未知错误'
+            const responseData = error.response.data
+            const apiMessage = responseData?.message || responseData?.error || '未知错误'
             
-            if (status === 404) {
-              this.$message.error(`删除失败：记录不存在或已被删除 (${errorMessage})`)
-            } else if (status === 403) {
-              this.$message.error(`删除失败：权限不足 (${errorMessage})`)
-            } else if (status === 500) {
-              this.$message.error(`删除失败：服务器内部错误 (${errorMessage})`)
-            } else {
-              this.$message.error(`删除失败：HTTP ${status} 错误 (${errorMessage})`)
+            switch (status) {
+              case 404:
+                errorMessage = `删除失败：记录不存在或已被删除 (${apiMessage})`
+                break
+              case 403:
+                errorMessage = `删除失败：权限不足 (${apiMessage})`
+                break
+              case 500:
+                errorMessage = `删除失败：服务器内部错误 (${apiMessage})`
+                break
+              case 400:
+                errorMessage = `删除失败：请求参数错误 (${apiMessage})`
+                break
+              default:
+                errorMessage = `删除失败：HTTP ${status} 错误 (${apiMessage})`
             }
+          } else if (error.message) {
+            errorMessage = `删除失败：${error.message}`
           } else {
-            this.$message.error('删除失败：网络错误或服务器无响应')
+            errorMessage = '删除失败：网络错误或服务器无响应'
           }
+          
+          this.$message.error(errorMessage)
         }
       }
+      
+      console.log('=== DELETE OPERATION END ===')
     },
     async handleAdd() {
       console.log('=== HANDLE ADD START ===')
@@ -885,9 +1003,16 @@ export default {
       console.log('=== RESET FORM END ===')
     },
     handleDialogClose() {
-      console.log('=== DIALOG CLOSE DEBUG ===')
-      console.log('Dialog closed, form before reset:', this.form)
+      console.log('=== DIALOG CLOSE START ===')
+      console.log('Dialog closed, current form:', JSON.stringify(this.form, null, 2))
+      
+      // 重置表单状态
       this.resetForm()
+      
+      // 重置提交状态
+      this.submitLoading = false
+      
+      console.log('=== DIALOG CLOSE END ===')
     },
     async submitForm() {
       console.log('=== FORM SUBMISSION START ===')
