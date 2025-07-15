@@ -693,6 +693,7 @@ export default {
       this.isEdit = false
       this.dialogVisible = true
       this.resetForm()
+      this.loadOptions()  // 添加这一行
     },
     resetForm() {
       this.form = {
