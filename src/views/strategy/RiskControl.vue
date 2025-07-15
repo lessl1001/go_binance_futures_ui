@@ -708,22 +708,26 @@ export default {
       }
     },
     async submitForm() {
-      try {
-        await this.$refs.form.validate()
-        this.submitLoading = true
-        
-        await createOrUpdateStrategyFreeze(this.form)
-        this.$message.success('操作成功')
-        this.dialogVisible = false
-        this.fetchData()
-      } catch (error) {
-        if (error !== false) {
-          this.$message.error('操作失败，请重试')
-        }
-      } finally {
-        this.submitLoading = false
-      }
-    },
+  try {
+    await this.$refs.form.validate()
+    this.submitLoading = true
+    
+    await createOrUpdateStrategyFreeze(this.form)
+    this.$message.success('操作成功')
+    this.dialogVisible = false
+    // 同时刷新数据和选项
+    await Promise.all([
+      this.fetchData(),
+      this.loadOptions()  // 添加这一行
+    ])
+  } catch (error) {
+    if (error !== false) {
+      this.$message.error('操作失败，请重试')
+    }
+  } finally {
+    this.submitLoading = false
+  }
+},
     async loadLogs() {
       this.logsLoading = true
       try {
