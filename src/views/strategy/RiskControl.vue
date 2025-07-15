@@ -789,11 +789,7 @@ export default {
         this.resetForm()
       }
     },
-      // 只有在编辑模式或用户主动关闭时才重置表单
-      if (this.isEdit || !this.submitLoading) {
-        this.resetForm()
-      }
-    },
+    resetForm() {
       // 保存当前选择以便可能的恢复
       const currentSelections = {
         symbol: this.form.symbol,
