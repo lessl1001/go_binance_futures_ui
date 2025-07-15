@@ -755,52 +755,29 @@ export default {
         }
       }
     },
-    async handleDelete(row) {
+    handleDelete(row) {
       console.log('=== DELETE OPERATION DEBUG ===')
       console.log('Deleting row:', row)
       
-      try {
-        await this.$confirm('确定要删除该配置吗？删除后无法恢复！', '确认删除', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        })
-        
-        if (!row.id) {
-          console.error('Delete failed: Missing row ID')
-          this.$message.error('删除失败：缺少记录ID')
-          return
-        }
-        
-        console.log('Deleting row ID:', row.id)
-        
-        await deleteStrategyFreeze(row.id)
-        this.$message.success('删除成功')
-        this.fetchData()
-      } catch (error) {
-        console.error('Delete error:', error)
-        if (error !== 'cancel') {
-          let errorMessage = '删除失败：未知错误'
-          if (error.response) {
-            const status = error.response.status
-            console.log('HTTP Status:', status)
-            switch (status) {
-              case 404:
-                errorMessage = '删除失败：记录不存在或已被删除'
-                break
-              case 403:
-                errorMessage = '删除失败：权限不足'
-                break
-              case 500:
-                errorMessage = '删除失败：服务器内部错误'
-                break
-              default:
-                errorMessage = `删除失败：HTTP ${status} 错误`
-            }
+      this.$confirm(`确定要删除该配置吗？删除后无法恢复！`, '确认删除', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+        .then(async() => {
+          try {
+            console.log('Deleting row ID:', row.id)
+            await deleteStrategyFreeze(row.id)
+            this.$message.success('删除成功')
+            await this.fetchData()
+          } catch (error) {
+            console.error('Delete error:', error)
+            this.$message.error('删除失败')
           }
-          this.$message.error(errorMessage)
-        }
-      }
+        })
+        .catch(() => {
+          console.log('Delete cancelled')
+        })
     },
     handleAdd() {
       console.log('=== OPENING ADD DIALOG ===')
