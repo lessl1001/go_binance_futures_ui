@@ -36,7 +36,15 @@ export function updateStrategyFreeze(id, data) {
   })
 }
 
-// 5. 手动解除冻结
+// 5. 删除冻结配置
+export function deleteStrategyFreeze(id) {
+  return request({
+    url: `/strategy-freeze/${id}`,
+    method: 'delete',
+  })
+}
+
+// 6. 手动解除冻结
 export function unfreezeStrategy(data) {
   return request({
     url: '/strategy-freeze/unfreeze',
@@ -45,10 +53,36 @@ export function unfreezeStrategy(data) {
   })
 }
 
-// 6. 重置亏损次数
+// 7. 重置亏损次数
 export function resetStrategyLoss(data) {
   return request({
     url: '/strategy-freeze/reset-loss',
+    method: 'post',
+    data,
+  })
+}
+
+// 8. 获取操作日志
+export function getStrategyFreezeLogs(query = {}) {
+  return request({
+    url: '/strategy-freeze/logs',
+    method: 'get',
+    params: query,
+  })
+}
+
+// 9. 获取可用的币种和策略选项
+export function getStrategyFreezeOptions() {
+  return request({
+    url: '/strategy-freeze/options',
+    method: 'get',
+  })
+}
+
+// 10. 模拟交易结果（用于测试冻结逻辑）
+export function simulateTradeResult(data) {
+  return request({
+    url: '/strategy-freeze/simulate-trade',
     method: 'post',
     data,
   })
