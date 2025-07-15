@@ -77,14 +77,6 @@
     <!-- Action Buttons -->
     <div class="action-buttons">
       <el-button
-        type="primary"
-        size="mini"
-        :loading="listLoading"
-        @click="handleRefresh"
-      >
-        刷新数据
-      </el-button>
-      <el-button
         type="success"
         size="mini"
         @click="handleAdd"
@@ -448,15 +440,6 @@
       </div>
     </el-dialog>
 
-    <!-- Auto Refresh Switch -->
-    <div class="auto-refresh-switch">
-      <el-switch
-        v-model="autoRefresh"
-        active-text="自动刷新"
-        inactive-text="手动刷新"
-        @change="handleAutoRefreshChange"
-      />
-    </div>
   </div>
 </template>
 
@@ -533,8 +516,6 @@ export default {
         is_profit: [{ required: true, message: '请选择交易结果', trigger: 'change' }],
       },
       testLoading: false,
-      autoRefresh: false,
-      refreshTimer: null,
     }
   },
   created() {
@@ -542,9 +523,7 @@ export default {
     this.fetchData()
   },
   beforeDestroy() {
-    if (this.refreshTimer) {
-      clearInterval(this.refreshTimer)
-    }
+    // Remove any cleanup since we removed auto-refresh
   },
   methods: {
     async loadOptions() {
@@ -552,6 +531,8 @@ export default {
         console.log('Loading options...')
         const response = await getStrategyFreezeOptions()
         const data = response.data || {}
+        
+        console.log('Options API response:', data)
         
         // 确保选项数据格式正确
         this.symbolOptions = Array.isArray(data.symbols) ? data.symbols : []
@@ -631,14 +612,25 @@ export default {
           pageSize: this.listQuery.limit,
         }
         
-        // 添加所有筛选参数到后端查询
-        if (this.filterForm.coin) params.symbol = this.filterForm.coin
-        if (this.filterForm.strategy) params.strategy_name = this.filterForm.strategy
-        if (this.filterForm.tradeType) params.trade_type = this.filterForm.tradeType
+        // 添加筛选参数到后端查询
+        if (this.filterForm.coin) {
+          params.symbol = this.filterForm.coin
+          console.log('Adding coin filter:', this.filterForm.coin)
+        }
+        if (this.filterForm.strategy) {
+          params.strategy_name = this.filterForm.strategy
+          console.log('Adding strategy filter:', this.filterForm.strategy)
+        }
+        if (this.filterForm.tradeType) {
+          params.trade_type = this.filterForm.tradeType
+          console.log('Adding trade type filter:', this.filterForm.tradeType)
+        }
         
         console.log('Fetching data with params:', params)
 
         const response = await getStrategyFreezeList(params)
+        console.log('API response:', response)
+        
         let list = (response.data.list || []).map(item => ({
           ...item,
           changed: false,
@@ -647,6 +639,7 @@ export default {
         
         // 处理冻结状态筛选（在前端处理，因为需要计算时间）
         if (this.filterForm.freezeStatus) {
+          const originalLength = list.length
           list = list.filter(row => {
             if (this.filterForm.freezeStatus === 'frozen') {
               return this.isFrozen(row)
@@ -655,12 +648,13 @@ export default {
             }
             return true
           })
+          console.log(`Freeze status filter applied: ${originalLength} -> ${list.length} items`)
         }
         
         this.list = list
         this.total = response.data.total || 0
         
-        console.log('Data fetched successfully, total:', this.total)
+        console.log('Data fetched successfully, total:', this.total, 'list length:', this.list.length)
       } catch (error) {
         console.error('Fetch data error:', error)
         this.list = []
@@ -673,12 +667,6 @@ export default {
     handleFilter() {
       console.log('Filter triggered with:', this.filterForm)
       this.listQuery.page = 1
-      this.fetchData()
-    },
-    handleRefresh() {
-      console.log('Manual refresh triggered')
-      // 手动刷新时，重新加载选项和数据
-      this.loadOptions()
       this.fetchData()
     },
     handleParamChange(row) {
@@ -766,42 +754,54 @@ export default {
           type: 'warning',
         })
         
-        console.log('Deleting row with ID:', row.id, 'Row data:', row)
+        console.log('=== DELETE OPERATION DEBUG ===')
+        console.log('Deleting row:', row)
+        console.log('Row ID:', row.id)
+        console.log('Row data:', JSON.stringify(row, null, 2))
         
         if (!row.id) {
+          console.error('Delete failed: Missing row ID')
           this.$message.error('删除失败：缺少记录ID')
           return
         }
         
         // 检查ID是否为有效数字
         if (isNaN(row.id) || row.id <= 0) {
+          console.error('Delete failed: Invalid row ID:', row.id)
           this.$message.error('删除失败：无效的记录ID')
           return
         }
         
+        console.log('Calling delete API with ID:', row.id)
         await deleteStrategyFreeze(row.id)
+        
+        console.log('Delete API call successful')
         this.$message.success('删除成功')
+        
+        // 重新获取数据
         this.fetchData()
+        
       } catch (error) {
         if (error !== 'cancel') {
-          console.error('Delete error:', error)
-          console.error('Error details:', {
-            message: error.message,
-            response: error.response,
-            status: error.response?.status,
-            data: error.response?.data
-          })
+          console.error('=== DELETE ERROR ===')
+          console.error('Error details:', error)
+          console.error('Error message:', error.message)
+          console.error('Error response:', error.response)
+          console.error('Error status:', error.response?.status)
+          console.error('Error data:', error.response?.data)
           
           if (error.response) {
             const status = error.response.status
+            const errorMessage = error.response.data?.message || error.response.data?.error || '未知错误'
+            
             if (status === 404) {
-              this.$message.error('删除失败：记录不存在或已被删除')
+              this.$message.error(`删除失败：记录不存在或已被删除 (${errorMessage})`)
             } else if (status === 403) {
-              this.$message.error('删除失败：权限不足')
+              this.$message.error(`删除失败：权限不足 (${errorMessage})`)
             } else if (status === 500) {
-              this.$message.error('删除失败：服务器内部错误')
+              this.$message.error(`删除失败：服务器内部错误 (${errorMessage})`)
             } else {
-              this.$message.error(`删除失败：HTTP ${status} 错误`)
+              this.$message.error(`删除失败：HTTP ${status} 错误 (${errorMessage})`)
             }
           } else {
             this.$message.error('删除失败：网络错误或服务器无响应')
@@ -813,12 +813,6 @@ export default {
       this.dialogTitle = '新增风控配置'
       this.isEdit = false
       this.resetForm()
-      
-      // 只在选项为空时才加载，避免不必要的重新加载
-      if (this.symbolOptions.length === 0 || this.strategyOptions.length === 0 || this.tradeTypeOptions.length === 0) {
-        await this.loadOptions()
-      }
-      
       this.dialogVisible = true
     },
     resetForm() {
@@ -834,25 +828,14 @@ export default {
       }
     },
     handleDialogClose() {
-      // 只有在编辑模式时才重置表单
-      // 在新增模式下，保持表单状态以便用户继续添加
-      if (this.isEdit) {
-        this.resetForm()
-      }
+      this.resetForm()
     },
     async submitForm() {
       try {
         await this.$refs.form.validate()
         this.submitLoading = true
         
-        // 保存当前表单选择状态（在提交之前）
-        const currentSelections = {
-          symbol: this.form.symbol,
-          strategy_name: this.form.strategy_name,
-          trade_type: this.form.trade_type
-        }
-        
-        // 创建提交数据的副本，避免在提交过程中form数据被修改
+        // 直接提交表单数据，不做任何复杂的处理
         const submitData = {
           symbol: this.form.symbol,
           strategy_name: this.form.strategy_name,
@@ -861,59 +844,49 @@ export default {
           freeze_hours: this.form.freeze_hours
         }
         
-        console.log('Submitting form data:', submitData)
-        console.log('Current selections to preserve:', currentSelections)
+        console.log('=== FORM SUBMISSION DEBUG ===')
+        console.log('Form values before submission:', this.form)
+        console.log('Data being submitted to API:', submitData)
+        console.log('Form validation passed')
         
         // 验证关键字段不能为空
         if (!submitData.symbol || !submitData.strategy_name || !submitData.trade_type) {
+          console.error('Validation failed - missing required fields:', {
+            symbol: submitData.symbol,
+            strategy_name: submitData.strategy_name,
+            trade_type: submitData.trade_type
+          })
           this.$message.error('请完整填写币种、策略和交易类型')
           return
         }
         
+        console.log('Calling API...')
         const response = await createOrUpdateStrategyFreeze(submitData)
-        this.$message.success('操作成功')
+        console.log('API response:', response)
         
-        // 如果是编辑模式，关闭对话框并刷新数据
+        this.$message.success('配置保存成功')
+        
+        // 如果是编辑模式，关闭对话框
         if (this.isEdit) {
           this.dialogVisible = false
-          await this.fetchData()
         } else {
-          // 如果是新增模式，使用本地数据回写，避免刷新导致的表单状态丢失
-          // 将新保存的数据添加到本地列表中
-          const newItem = {
-            id: response.data?.id || Date.now(), // 使用返回的ID或时间戳作为临时ID
-            ...submitData,
-            loss_count: 0,
-            freeze_until: null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            changed: false,
-            saving: false
-          }
-          
-          // 将新项添加到列表开头
-          this.list.unshift(newItem)
-          this.total += 1
-          
-          // 保持选择项不变，只重置数值字段
-          this.form.symbol = currentSelections.symbol
-          this.form.strategy_name = currentSelections.strategy_name
-          this.form.trade_type = currentSelections.trade_type
+          // 新增模式：保持表单选择，重置数值字段
           this.form.freeze_on_loss_count = 1
           this.form.freeze_hours = 1
-          
           this.$message.success('配置已保存，可以继续添加更多配置')
-          console.log('New item added to local list:', newItem)
-          console.log('Form selections preserved:', {
-            symbol: this.form.symbol,
-            strategy_name: this.form.strategy_name,
-            trade_type: this.form.trade_type
-          })
         }
+        
+        // 重新获取数据以更新列表
+        this.fetchData()
+        
       } catch (error) {
-        console.error('Submit error:', error)
+        console.error('=== FORM SUBMISSION ERROR ===')
+        console.error('Error details:', error)
+        console.error('Error response:', error.response)
+        console.error('Error data:', error.response?.data)
+        
         if (error !== false) {
-          this.$message.error('操作失败，请重试')
+          this.$message.error('保存失败，请重试')
         }
       } finally {
         this.submitLoading = false
@@ -924,7 +897,7 @@ export default {
         await this.$refs.form.validate()
         this.submitLoading = true
         
-        // 创建提交数据的副本
+        // 直接提交表单数据
         const submitData = {
           symbol: this.form.symbol,
           strategy_name: this.form.strategy_name,
@@ -933,39 +906,39 @@ export default {
           freeze_hours: this.form.freeze_hours
         }
         
-        console.log('Submitting form data (close):', submitData)
+        console.log('=== FORM SUBMISSION AND CLOSE DEBUG ===')
+        console.log('Form values before submission:', this.form)
+        console.log('Data being submitted to API:', submitData)
         
         // 验证关键字段不能为空
         if (!submitData.symbol || !submitData.strategy_name || !submitData.trade_type) {
+          console.error('Validation failed - missing required fields:', {
+            symbol: submitData.symbol,
+            strategy_name: submitData.strategy_name,
+            trade_type: submitData.trade_type
+          })
           this.$message.error('请完整填写币种、策略和交易类型')
           return
         }
         
+        console.log('Calling API...')
         const response = await createOrUpdateStrategyFreeze(submitData)
-        this.$message.success('操作成功')
+        console.log('API response:', response)
+        
+        this.$message.success('配置保存成功')
         this.dialogVisible = false
         
-        // 使用本地数据回写，避免刷新导致的状态丢失
-        const newItem = {
-          id: response.data?.id || Date.now(),
-          ...submitData,
-          loss_count: 0,
-          freeze_until: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          changed: false,
-          saving: false
-        }
+        // 重新获取数据以更新列表
+        this.fetchData()
         
-        // 将新项添加到列表开头
-        this.list.unshift(newItem)
-        this.total += 1
-        
-        console.log('New item added to local list (close):', newItem)
       } catch (error) {
-        console.error('Submit and close error:', error)
+        console.error('=== FORM SUBMISSION AND CLOSE ERROR ===')
+        console.error('Error details:', error)
+        console.error('Error response:', error.response)
+        console.error('Error data:', error.response?.data)
+        
         if (error !== false) {
-          this.$message.error('操作失败，请重试')
+          this.$message.error('保存失败，请重试')
         }
       } finally {
         this.submitLoading = false
@@ -1045,18 +1018,6 @@ export default {
         this.testLoading = false
       }
     },
-    handleAutoRefreshChange(value) {
-      if (value) {
-        this.refreshTimer = setInterval(() => {
-          this.fetchData()
-        }, 10000) // 每10秒刷新一次
-      } else {
-        if (this.refreshTimer) {
-          clearInterval(this.refreshTimer)
-          this.refreshTimer = null
-        }
-      }
-    },
   },
   watch: {
     showLogsDialog(val) {
@@ -1079,17 +1040,6 @@ export default {
 
 .action-buttons .el-button {
   margin-right: 10px;
-}
-
-.auto-refresh-switch {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1000;
-  background: white;
-  padding: 10px;
-  border-radius: 5px;
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,.1);
 }
 
 .el-table .el-button {
