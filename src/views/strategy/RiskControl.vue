@@ -548,12 +548,6 @@ export default {
   },
   methods: {
     async loadOptions() {
-      // 如果选项已经加载且不为空，则不重新加载
-      if (this.symbolOptions.length > 0 && this.strategyOptions.length > 0 && this.tradeTypeOptions.length > 0) {
-        console.log('Options already loaded, skipping reload')
-        return
-      }
-      
       try {
         console.log('Loading options...')
         const response = await getStrategyFreezeOptions()
@@ -675,6 +669,8 @@ export default {
     },
     handleRefresh() {
       console.log('Manual refresh triggered')
+      // 手动刷新时，重新加载选项和数据
+      this.loadOptions()
       this.fetchData()
     },
     handleParamChange(row) {
@@ -810,8 +806,8 @@ export default {
       this.isEdit = false
       this.resetForm()
       
-      // 确保选项已加载，但不重新加载以避免冲突
-      if (this.symbolOptions.length === 0 || this.strategyOptions.length === 0) {
+      // 只在选项为空时才加载，避免不必要的重新加载
+      if (this.symbolOptions.length === 0 || this.strategyOptions.length === 0 || this.tradeTypeOptions.length === 0) {
         await this.loadOptions()
       }
       
@@ -852,7 +848,7 @@ export default {
         
         console.log('Submitting form data:', submitData)
         
-        await createOrUpdateStrategyFreeze(submitData)
+        const response = await createOrUpdateStrategyFreeze(submitData)
         this.$message.success('操作成功')
         
         // 如果是编辑模式，关闭对话框并刷新数据
@@ -860,12 +856,29 @@ export default {
           this.dialogVisible = false
           await this.fetchData()
         } else {
-          // 如果是新增模式，保持对话框打开，只重置数值字段
+          // 如果是新增模式，使用本地数据回写，避免刷新导致的表单状态丢失
+          // 将新保存的数据添加到本地列表中
+          const newItem = {
+            id: response.data?.id || Date.now(), // 使用返回的ID或时间戳作为临时ID
+            ...submitData,
+            loss_count: 0,
+            freeze_until: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            changed: false,
+            saving: false
+          }
+          
+          // 将新项添加到列表开头
+          this.list.unshift(newItem)
+          this.total += 1
+          
+          // 只重置数值字段，保持选择项不变
           this.form.freeze_on_loss_count = 1
           this.form.freeze_hours = 1
+          
           this.$message.success('配置已保存，可以继续添加更多配置')
-          // 更新列表但不刷新页面
-          await this.fetchData()
+          console.log('New item added to local list:', newItem)
         }
       } catch (error) {
         console.error('Submit error:', error)
@@ -892,12 +905,27 @@ export default {
         
         console.log('Submitting form data (close):', submitData)
         
-        await createOrUpdateStrategyFreeze(submitData)
+        const response = await createOrUpdateStrategyFreeze(submitData)
         this.$message.success('操作成功')
         this.dialogVisible = false
         
-        // 刷新数据
-        await this.fetchData()
+        // 使用本地数据回写，避免刷新导致的状态丢失
+        const newItem = {
+          id: response.data?.id || Date.now(),
+          ...submitData,
+          loss_count: 0,
+          freeze_until: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          changed: false,
+          saving: false
+        }
+        
+        // 将新项添加到列表开头
+        this.list.unshift(newItem)
+        this.total += 1
+        
+        console.log('New item added to local list (close):', newItem)
       } catch (error) {
         console.error('Submit and close error:', error)
         if (error !== false) {
