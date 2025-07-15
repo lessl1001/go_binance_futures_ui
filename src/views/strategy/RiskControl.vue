@@ -603,6 +603,13 @@ export default {
         const response = await getStrategyFreezeList(params)
         console.log('API response:', response)
         
+        // 验证响应数据结构
+        if (!response.data || !response.data.list) {
+          console.error('Invalid API response structure:', response)
+          this.$message.error('获取数据失败：响应格式错误')
+          return
+        }
+        
         this.list = (response.data.list || [])
         this.total = response.data.total || 0
 
@@ -613,10 +620,12 @@ export default {
         this.list.forEach((item, index) => {
           console.log(`Record ${index + 1}:`, {
             id: item.id,
+            idType: typeof item.id,
             symbol: item.symbol,
             strategy_name: item.strategy_name,
             trade_type: item.trade_type,
-            isEmpty: !item.symbol || !item.strategy_name || !item.trade_type
+            isEmpty: !item.symbol || !item.strategy_name || !item.trade_type,
+            hasValidId: item.id && item.id !== null && item.id !== undefined
           })
         })
 
@@ -758,6 +767,15 @@ export default {
     handleDelete(row) {
       console.log('=== DELETE OPERATION DEBUG ===')
       console.log('Deleting row:', row)
+      console.log('Row ID:', row.id)
+      console.log('Row ID type:', typeof row.id)
+      
+      // 验证 row.id 是否存在
+      if (!row.id) {
+        console.error('Row ID is missing or invalid:', row.id)
+        this.$message.error('删除失败：记录ID无效')
+        return
+      }
       
       this.$confirm(`确定要删除该配置吗？删除后无法恢复！`, '确认删除', {
         confirmButtonText: '确定',
@@ -766,13 +784,36 @@ export default {
       })
         .then(async() => {
           try {
-            console.log('Deleting row ID:', row.id)
+            console.log('Sending delete request for ID:', row.id)
             await deleteStrategyFreeze(row.id)
+            console.log('Delete request successful')
             this.$message.success('删除成功')
             await this.fetchData()
           } catch (error) {
-            console.error('Delete error:', error)
-            this.$message.error('删除失败')
+            console.error('Delete error details:', error)
+            
+            // 详细的错误处理
+            if (error.response) {
+              console.log('Error response:', error.response)
+              const status = error.response.status
+              const message = error.response.data?.message || error.message
+              
+              if (status === 404) {
+                this.$message.error('删除失败：记录不存在或已被删除')
+              } else if (status === 403) {
+                this.$message.error('删除失败：无权限删除此记录')
+              } else if (status === 500) {
+                this.$message.error('删除失败：服务器错误')
+              } else {
+                this.$message.error(`删除失败：${message}`)
+              }
+            } else if (error.request) {
+              console.log('Error request:', error.request)
+              this.$message.error('删除失败：网络错误')
+            } else {
+              console.log('Error message:', error.message)
+              this.$message.error(`删除失败：${error.message}`)
+            }
           }
         })
         .catch(() => {
