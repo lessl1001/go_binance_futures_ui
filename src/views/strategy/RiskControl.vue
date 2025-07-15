@@ -146,7 +146,7 @@
             :max="100"
             size="mini"
             controls-position="right"
-            @change="handleParamChange(scope.row)"
+            @blur="handleInlineEdit(scope.row)"
           />
         </template>
       </el-table-column>
@@ -162,7 +162,7 @@
             :max="168"
             size="mini"
             controls-position="right"
-            @change="handleParamChange(scope.row)"
+            @blur="handleInlineEdit(scope.row)"
           />
         </template>
       </el-table-column>
@@ -194,18 +194,9 @@
       <el-table-column
         label="操作"
         align="center"
-        width="350"
+        width="250"
       >
         <template slot-scope="scope">
-          <el-button
-            type="primary"
-            size="mini"
-            :loading="scope.row.saving"
-            :disabled="!scope.row.changed"
-            @click="saveRow(scope.row)"
-          >
-            保存
-          </el-button>
           <el-button
             type="warning"
             size="mini"
@@ -305,10 +296,7 @@
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="submitLoading" @click="submitForm">
-          {{ isEdit ? '更新' : '保存并继续' }}
-        </el-button>
-        <el-button v-if="!isEdit" type="success" :loading="submitLoading" @click="submitAndClose">
-          保存并关闭
+          {{ isEdit ? '更新' : '保存' }}
         </el-button>
       </div>
     </el-dialog>
@@ -615,11 +603,7 @@ export default {
         const response = await getStrategyFreezeList(params)
         console.log('API response:', response)
         
-        this.list = (response.data.list || []).map(item => ({
-          ...item,
-          changed: false,
-          saving: false,
-        }))
+        this.list = (response.data.list || [])
         this.total = response.data.total || 0
 
         console.log('Data fetched successfully, total:', this.total, 'list length:', this.list.length)
@@ -656,15 +640,55 @@ export default {
         this.listLoading = false
       }
     },
+    async handleInlineEdit(row) {
+      console.log('=== INLINE EDIT ===')
+      console.log('Editing row:', row)
+      
+      try {
+        // 创建完整的更新数据，包含所有必要字段
+        const updateData = {
+          symbol: row.symbol,
+          strategy_name: row.strategy_name,
+          trade_type: row.trade_type,
+          freeze_on_loss_count: Number(row.freeze_on_loss_count),
+          freeze_hours: Number(row.freeze_hours)
+        }
+        
+        console.log('Sending update data:', updateData)
+        
+        // 使用 createOrUpdateStrategyFreeze 而不是 updateStrategyFreeze
+        // 这样可以确保所有字段都被正确发送
+        await createOrUpdateStrategyFreeze({
+          id: row.id,
+          ...updateData
+        })
+        
+        this.$message({
+          message: '修改成功',
+          type: 'success',
+          duration: 2000
+        })
+        
+        console.log('Inline edit successful')
+        
+        // 可选：刷新数据以确保数据一致性
+        // await this.fetchData()
+        
+      } catch (error) {
+        console.error('Inline edit error:', error)
+        this.$message({
+          message: '修改失败，请重试',
+          type: 'error',
+          duration: 3000
+        })
+      }
+    },
     handleFilter() {
       console.log('=== FILTER OPERATION ===')
       console.log('Filter form:', this.filterForm)
       
       this.listQuery.page = 1
       this.fetchData()
-    },
-    handleParamChange(row) {
-      row.changed = true
     },
     isFrozen(row) {
       // 判断冻结状态
@@ -681,69 +705,51 @@ export default {
         return `已冻结(${remainHour}小时)`
       }
     },
-    async saveRow(row) {
-      console.log('=== SAVING ROW ===')
-      console.log('Row data:', row)
-      
-      row.saving = true
-      try {
-        const updateData = {
-          freeze_on_loss_count: row.freeze_on_loss_count,
-          freeze_hours: row.freeze_hours
-        }
-        
-        console.log('Updating row with data:', updateData)
-        
-        await updateStrategyFreeze(row.id, updateData)
-        row.changed = false
-        this.$message.success('保存成功')
-        
-        // 刷新数据
-        this.fetchData()
-      } catch (error) {
-        console.error('Save row error:', error)
-        this.$message.error('保存失败，请重试')
-      } finally {
-        row.saving = false
-      }
-    },
     async handleUnfreeze(row) {
+      console.log('=== UNFREEZE OPERATION ===')
+      console.log('Unfreezing row:', row)
+      
       try {
         await this.$confirm('确定要解冻该策略吗？', '确认操作', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
-          type: 'warning',
+          type: 'warning'
         })
         
         await unfreezeStrategy({
           symbol: row.symbol,
           strategy_name: row.strategy_name,
-          trade_type: row.trade_type,
+          trade_type: row.trade_type
         })
         this.$message.success('解冻成功')
         this.fetchData()
       } catch (error) {
+        console.error('Unfreeze error:', error)
         if (error !== 'cancel') {
           this.$message.error('解冻失败，请重试')
         }
       }
     },
     async handleResetLoss(row) {
+      console.log('=== RESET LOSS OPERATION ===')
+      console.log('Resetting loss for row:', row)
+      
       try {
         await this.$confirm('确定要重置该策略的亏损次数吗？', '确认操作', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
-          type: 'warning',
+          type: 'warning'
         })
         
         await resetStrategyLoss({
           symbol: row.symbol,
           strategy_name: row.strategy_name,
-          trade_type: row.trade_type,
+          trade_type: row.trade_type
         })
         this.$message.success('重置亏损成功')
         this.fetchData()
       } catch (error) {
+        console.error('Reset loss error:', error)
         if (error !== 'cancel') {
           this.$message.error('重置亏损失败，请重试')
         }
@@ -857,8 +863,8 @@ export default {
         console.log('Form validation passed')
         this.submitLoading = true
         
-        // 创建表单数据快照，防止提交过程中数据丢失
-        const formSnapshot = {
+        // 创建表单数据
+        const formData = {
           symbol: this.form.symbol.trim(),
           strategy_name: this.form.strategy_name.trim(),
           trade_type: this.form.trade_type.trim(),
@@ -866,39 +872,17 @@ export default {
           freeze_hours: Number(this.form.freeze_hours)
         }
         
-        console.log('=== FORM SUBMISSION DEBUG ===')
-        console.log('Submitting data:', formSnapshot)
+        console.log('Submitting data:', formData)
         
         // 提交数据
-        const response = await createOrUpdateStrategyFreeze(formSnapshot)
+        const response = await createOrUpdateStrategyFreeze(formData)
         console.log('API response:', response)
         
         this.$message.success('操作成功')
+        this.dialogVisible = false
         
         // 刷新数据列表
         await this.fetchData()
-        
-        // 如果是新增模式，保持表单开启并保留选择项
-        if (!this.isEdit) {
-          console.log('=== PRESERVING FORM SELECTIONS ===')
-          
-          // 等待 Vue 更新后再保存选择
-          await this.$nextTick()
-          
-          // 保留用户选择的币种、策略、交易类型
-          Object.assign(this.form, {
-            symbol: formSnapshot.symbol,
-            strategy_name: formSnapshot.strategy_name,
-            trade_type: formSnapshot.trade_type,
-            freeze_on_loss_count: 1,
-            freeze_hours: 1
-          })
-          
-          console.log('Form after preserving selections:', this.form)
-        } else {
-          // 编辑模式，关闭对话框
-          this.dialogVisible = false
-        }
         
       } catch (error) {
         console.error('Form submission error:', error)
@@ -908,95 +892,6 @@ export default {
       } finally {
         this.submitLoading = false
         console.log('=== FORM SUBMISSION END ===')
-      }
-    },
-    async submitAndClose() {
-      console.log('=== SUBMIT AND CLOSE ===')
-      
-      try {
-        await this.$refs.form.validate()
-        this.submitLoading = true
-        
-        // 验证表单数据
-        if (!this.form.symbol || !this.form.strategy_name || !this.form.trade_type) {
-          this.$message.error('请填写所有必需字段')
-          return
-        }
-        
-        // 保存当前表单状态，防止提交过程中丢失
-        const formSnapshot = {
-          symbol: this.form.symbol.trim(),
-          strategy_name: this.form.strategy_name.trim(),
-          trade_type: this.form.trade_type.trim(),
-          freeze_on_loss_count: Number(this.form.freeze_on_loss_count),
-          freeze_hours: Number(this.form.freeze_hours)
-        }
-        
-        console.log('Submit data:', formSnapshot)
-        
-        await createOrUpdateStrategyFreeze(formSnapshot)
-        this.$message.success('操作成功')
-        this.dialogVisible = false
-        
-        // 刷新数据
-        await this.fetchData()
-      } catch (error) {
-        console.error('Submit error:', error)
-        if (error !== false) {
-          this.$message.error('操作失败，请重试')
-        }
-      } finally {
-        this.submitLoading = false
-      }
-    },
-    async handleUnfreeze(row) {
-      console.log('=== UNFREEZE OPERATION ===')
-      console.log('Unfreezing row:', row)
-      
-      try {
-        await this.$confirm('确定要解冻该策略吗？', '确认操作', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        })
-        
-        await unfreezeStrategy({
-          symbol: row.symbol,
-          strategy_name: row.strategy_name,
-          trade_type: row.trade_type
-        })
-        this.$message.success('解冻成功')
-        this.fetchData()
-      } catch (error) {
-        console.error('Unfreeze error:', error)
-        if (error !== 'cancel') {
-          this.$message.error('解冻失败，请重试')
-        }
-      }
-    },
-    async handleResetLoss(row) {
-      console.log('=== RESET LOSS OPERATION ===')
-      console.log('Resetting loss for row:', row)
-      
-      try {
-        await this.$confirm('确定要重置该策略的亏损次数吗？', '确认操作', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        })
-        
-        await resetStrategyLoss({
-          symbol: row.symbol,
-          strategy_name: row.strategy_name,
-          trade_type: row.trade_type
-        })
-        this.$message.success('重置亏损成功')
-        this.fetchData()
-      } catch (error) {
-        console.error('Reset loss error:', error)
-        if (error !== 'cancel') {
-          this.$message.error('重置亏损失败，请重试')
-        }
       }
     },
     async loadLogs() {
@@ -1112,6 +1007,40 @@ export default {
 
 .dialog-footer .el-button {
   margin-left: 10px;
+}
+
+/* 内联编辑样式 */
+.el-input-number {
+  width: 100%;
+}
+
+.el-input-number .el-input__inner {
+  transition: all 0.3s ease;
+  border: 1px solid #dcdfe6;
+}
+
+.el-input-number:hover .el-input__inner {
+  border-color: #409eff;
+}
+
+.el-input-number.is-focused .el-input__inner {
+  border-color: #409eff;
+}
+
+/* 表格内输入框样式 */
+.el-table .el-input-number {
+  margin: 0;
+}
+
+.el-table .el-input-number .el-input__inner {
+  text-align: center;
+  font-size: 12px;
+  padding: 0 5px;
+}
+
+/* 添加轻微的阴影效果以突出编辑状态 */
+.el-input-number.is-focused {
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
 }
 
 /* 状态高亮 */
