@@ -548,7 +548,14 @@ export default {
   },
   methods: {
     async loadOptions() {
+      // 如果选项已经加载且不为空，则不重新加载
+      if (this.symbolOptions.length > 0 && this.strategyOptions.length > 0 && this.tradeTypeOptions.length > 0) {
+        console.log('Options already loaded, skipping reload')
+        return
+      }
+      
       try {
+        console.log('Loading options...')
         const response = await getStrategyFreezeOptions()
         const data = response.data || {}
         
@@ -621,21 +628,24 @@ export default {
           page: this.listQuery.page,
           pageSize: this.listQuery.limit,
         }
+        
+        // 添加所有筛选参数到后端查询
         if (this.filterForm.coin) params.symbol = this.filterForm.coin
         if (this.filterForm.strategy) params.strategy_name = this.filterForm.strategy
         if (this.filterForm.tradeType) params.trade_type = this.filterForm.tradeType
+        
+        console.log('Fetching data with params:', params)
 
         const response = await getStrategyFreezeList(params)
-        this.list = (response.data.list || []).map(item => ({
+        let list = (response.data.list || []).map(item => ({
           ...item,
           changed: false,
           saving: false,
         }))
-        this.total = response.data.total || 0
-
-        // 处理冻结状态筛选
+        
+        // 处理冻结状态筛选（在前端处理，因为需要计算时间）
         if (this.filterForm.freezeStatus) {
-          this.list = this.list.filter(row => {
+          list = list.filter(row => {
             if (this.filterForm.freezeStatus === 'frozen') {
               return this.isFrozen(row)
             } else if (this.filterForm.freezeStatus === 'normal') {
@@ -644,7 +654,13 @@ export default {
             return true
           })
         }
+        
+        this.list = list
+        this.total = response.data.total || 0
+        
+        console.log('Data fetched successfully, total:', this.total)
       } catch (error) {
+        console.error('Fetch data error:', error)
         this.list = []
         this.total = 0
         this.$message.error('获取风控数据失败')
@@ -770,8 +786,10 @@ export default {
       this.isEdit = false
       this.resetForm()
       
-      // 确保选项已加载
-      await this.loadOptions()
+      // 确保选项已加载，但不重新加载以避免冲突
+      if (this.symbolOptions.length === 0 || this.strategyOptions.length === 0) {
+        await this.loadOptions()
+      }
       
       this.dialogVisible = true
     },
@@ -799,34 +817,34 @@ export default {
         await this.$refs.form.validate()
         this.submitLoading = true
         
-        // 保存当前选择
-        const currentSelections = {
+        // 创建提交数据的副本，避免在提交过程中form数据被修改
+        const submitData = {
           symbol: this.form.symbol,
           strategy_name: this.form.strategy_name,
-          trade_type: this.form.trade_type
+          trade_type: this.form.trade_type,
+          freeze_on_loss_count: this.form.freeze_on_loss_count,
+          freeze_hours: this.form.freeze_hours
         }
         
-        await createOrUpdateStrategyFreeze(this.form)
+        console.log('Submitting form data:', submitData)
+        
+        await createOrUpdateStrategyFreeze(submitData)
         this.$message.success('操作成功')
         
-        // 刷新数据
-        await this.fetchData()
-        
-        // 如果是编辑模式，关闭对话框
+        // 如果是编辑模式，关闭对话框并刷新数据
         if (this.isEdit) {
           this.dialogVisible = false
+          await this.fetchData()
         } else {
-          // 如果是新增模式，保持对话框打开，恢复选择并重置数值
-          this.form = {
-            symbol: currentSelections.symbol,
-            strategy_name: currentSelections.strategy_name,
-            trade_type: currentSelections.trade_type,
-            freeze_on_loss_count: 1,
-            freeze_hours: 1,
-          }
+          // 如果是新增模式，保持对话框打开，只重置数值字段
+          this.form.freeze_on_loss_count = 1
+          this.form.freeze_hours = 1
           this.$message.success('配置已保存，可以继续添加更多配置')
+          // 更新列表但不刷新页面
+          await this.fetchData()
         }
       } catch (error) {
+        console.error('Submit error:', error)
         if (error !== false) {
           this.$message.error('操作失败，请重试')
         }
@@ -839,13 +857,25 @@ export default {
         await this.$refs.form.validate()
         this.submitLoading = true
         
-        await createOrUpdateStrategyFreeze(this.form)
+        // 创建提交数据的副本
+        const submitData = {
+          symbol: this.form.symbol,
+          strategy_name: this.form.strategy_name,
+          trade_type: this.form.trade_type,
+          freeze_on_loss_count: this.form.freeze_on_loss_count,
+          freeze_hours: this.form.freeze_hours
+        }
+        
+        console.log('Submitting form data (close):', submitData)
+        
+        await createOrUpdateStrategyFreeze(submitData)
         this.$message.success('操作成功')
         this.dialogVisible = false
         
         // 刷新数据
         await this.fetchData()
       } catch (error) {
+        console.error('Submit and close error:', error)
         if (error !== false) {
           this.$message.error('操作失败，请重试')
         }
