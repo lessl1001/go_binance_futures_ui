@@ -564,7 +564,9 @@ export default {
             { label: 'BTCUSDT', value: 'BTCUSDT' },
             { label: 'ETHUSDT', value: 'ETHUSDT' },
             { label: 'ADAUSDT', value: 'ADAUSDT' },
-            { label: 'BNBUSDT', value: 'BNBUSDT' }
+            { label: 'BNBUSDT', value: 'BNBUSDT' },
+            { label: 'SOLUSDT', value: 'SOLUSDT' },
+            { label: 'DOGEUSDT', value: 'DOGEUSDT' }
           ]
         }
         
@@ -573,7 +575,9 @@ export default {
             { label: 'MA_CROSS', value: 'MA_CROSS' },
             { label: 'RSI_DIVERGENCE', value: 'RSI_DIVERGENCE' },
             { label: 'BOLLINGER_BANDS', value: 'BOLLINGER_BANDS' },
-            { label: 'MACD_SIGNAL', value: 'MACD_SIGNAL' }
+            { label: 'MACD_SIGNAL', value: 'MACD_SIGNAL' },
+            { label: 'GRID_TRADING', value: 'GRID_TRADING' },
+            { label: 'DCA_STRATEGY', value: 'DCA_STRATEGY' }
           ]
         }
         
@@ -599,14 +603,18 @@ export default {
           { label: 'BTCUSDT', value: 'BTCUSDT' },
           { label: 'ETHUSDT', value: 'ETHUSDT' },
           { label: 'ADAUSDT', value: 'ADAUSDT' },
-          { label: 'BNBUSDT', value: 'BNBUSDT' }
+          { label: 'BNBUSDT', value: 'BNBUSDT' },
+          { label: 'SOLUSDT', value: 'SOLUSDT' },
+          { label: 'DOGEUSDT', value: 'DOGEUSDT' }
         ]
         
         this.strategyOptions = [
           { label: 'MA_CROSS', value: 'MA_CROSS' },
           { label: 'RSI_DIVERGENCE', value: 'RSI_DIVERGENCE' },
           { label: 'BOLLINGER_BANDS', value: 'BOLLINGER_BANDS' },
-          { label: 'MACD_SIGNAL', value: 'MACD_SIGNAL' }
+          { label: 'MACD_SIGNAL', value: 'MACD_SIGNAL' },
+          { label: 'GRID_TRADING', value: 'GRID_TRADING' },
+          { label: 'DCA_STRATEGY', value: 'DCA_STRATEGY' }
         ]
         
         this.tradeTypeOptions = [
@@ -813,13 +821,6 @@ export default {
       
       this.dialogVisible = true
     },
-    handleDialogClose() {
-      // 只有在编辑模式时才重置表单
-      // 在新增模式下，保持表单状态以便用户继续添加
-      if (this.isEdit) {
-        this.resetForm()
-      }
-    },
     resetForm() {
       this.form = {
         symbol: '',
@@ -832,10 +833,24 @@ export default {
         this.$refs.form.resetFields()
       }
     },
+    handleDialogClose() {
+      // 只有在编辑模式时才重置表单
+      // 在新增模式下，保持表单状态以便用户继续添加
+      if (this.isEdit) {
+        this.resetForm()
+      }
+    },
     async submitForm() {
       try {
         await this.$refs.form.validate()
         this.submitLoading = true
+        
+        // 保存当前表单选择状态（在提交之前）
+        const currentSelections = {
+          symbol: this.form.symbol,
+          strategy_name: this.form.strategy_name,
+          trade_type: this.form.trade_type
+        }
         
         // 创建提交数据的副本，避免在提交过程中form数据被修改
         const submitData = {
@@ -847,6 +862,13 @@ export default {
         }
         
         console.log('Submitting form data:', submitData)
+        console.log('Current selections to preserve:', currentSelections)
+        
+        // 验证关键字段不能为空
+        if (!submitData.symbol || !submitData.strategy_name || !submitData.trade_type) {
+          this.$message.error('请完整填写币种、策略和交易类型')
+          return
+        }
         
         const response = await createOrUpdateStrategyFreeze(submitData)
         this.$message.success('操作成功')
@@ -873,12 +895,20 @@ export default {
           this.list.unshift(newItem)
           this.total += 1
           
-          // 只重置数值字段，保持选择项不变
+          // 保持选择项不变，只重置数值字段
+          this.form.symbol = currentSelections.symbol
+          this.form.strategy_name = currentSelections.strategy_name
+          this.form.trade_type = currentSelections.trade_type
           this.form.freeze_on_loss_count = 1
           this.form.freeze_hours = 1
           
           this.$message.success('配置已保存，可以继续添加更多配置')
           console.log('New item added to local list:', newItem)
+          console.log('Form selections preserved:', {
+            symbol: this.form.symbol,
+            strategy_name: this.form.strategy_name,
+            trade_type: this.form.trade_type
+          })
         }
       } catch (error) {
         console.error('Submit error:', error)
@@ -904,6 +934,12 @@ export default {
         }
         
         console.log('Submitting form data (close):', submitData)
+        
+        // 验证关键字段不能为空
+        if (!submitData.symbol || !submitData.strategy_name || !submitData.trade_type) {
+          this.$message.error('请完整填写币种、策略和交易类型')
+          return
+        }
         
         const response = await createOrUpdateStrategyFreeze(submitData)
         this.$message.success('操作成功')
