@@ -652,25 +652,25 @@ export default {
     async handleInlineEdit(row) {
       console.log('=== INLINE EDIT ===')
       console.log('Editing row:', row)
+      console.log('Current loss_count before edit:', row.loss_count)
       
       try {
         // 创建完整的更新数据，包含所有必要字段
+        // 重要：保留 loss_count 字段，防止当前亏损次数被清零
         const updateData = {
           symbol: row.symbol,
           strategy_name: row.strategy_name,
           trade_type: row.trade_type,
           freeze_on_loss_count: Number(row.freeze_on_loss_count),
-          freeze_hours: Number(row.freeze_hours)
+          freeze_hours: Number(row.freeze_hours),
+          loss_count: row.loss_count || 0  // 保留当前亏损次数
         }
         
         console.log('Sending update data:', updateData)
+        console.log('Preserving loss_count value:', updateData.loss_count)
         
-        // 使用 createOrUpdateStrategyFreeze 而不是 updateStrategyFreeze
-        // 这样可以确保所有字段都被正确发送
-        await createOrUpdateStrategyFreeze({
-          id: row.id,
-          ...updateData
-        })
+        // 使用 updateStrategyFreeze 进行更新，保留所有字段
+        await updateStrategyFreeze(row.id, updateData)
         
         this.$message({
           message: '修改成功',
@@ -678,7 +678,7 @@ export default {
           duration: 2000
         })
         
-        console.log('Inline edit successful')
+        console.log('Inline edit successful - loss_count preserved')
         
         // 可选：刷新数据以确保数据一致性
         // await this.fetchData()
