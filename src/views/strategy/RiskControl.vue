@@ -114,7 +114,7 @@
         label="币种"
         prop="symbol"
         align="center"
-        width="100"
+        width="250"
       />
       <el-table-column
         label="策略"
@@ -524,16 +524,28 @@ export default {
         { label: 'ADAUSDT', value: 'ADAUSDT' },
         { label: 'BNBUSDT', value: 'BNBUSDT' },
         { label: 'SOLUSDT', value: 'SOLUSDT' },
+        { label: 'XRPUSDT', value: 'XRPUSDT' },
+        { label: 'SUIUSDT', value: 'SUIUSDT' },
+        { label: 'LINKUSDT', value: 'LINKUSDT' },
+        { label: 'LTCUSDT', value: 'LTCUSDT' },
+        { label: 'UNIUSDT', value: 'UNIUSDT' },
+        { label: 'HYPEUSDT', value: 'HYPEUSDT' },
+        { label: 'AVAXUSDT', value: 'AVAXUSDT' },
+        { label: '1000PEPEUSDT', value: '1000PEPEUSDT' },
+        { label: '1000SHIBUSDT', value: '1000SHIBUSDT' },
+        { label: '1000BONKUSDT', value: '1000BONKUSDT' },
         { label: 'DOGEUSDT', value: 'DOGEUSDT' }
       ]
       
       this.strategyOptions = [
-        { label: 'MA_CROSS', value: 'MA_CROSS' },
-        { label: 'RSI_DIVERGENCE', value: 'RSI_DIVERGENCE' },
-        { label: 'BOLLINGER_BANDS', value: 'BOLLINGER_BANDS' },
-        { label: 'MACD_SIGNAL', value: 'MACD_SIGNAL' },
-        { label: 'GRID_TRADING', value: 'GRID_TRADING' },
-        { label: 'DCA_STRATEGY', value: 'DCA_STRATEGY' }
+        { label: 'line1', value: 'line1' },
+        { label: 'line2', value: 'line2' },
+        { label: 'line3', value: 'line3' },
+        { label: 'line4', value: 'line4' },
+        { label: 'line5', value: 'line5' },
+        { label: 'line6', value: 'line6' },
+        { label: 'line7', value: 'line7' },
+        { label: 'test_strategy', value: 'test_strategy' }
       ]
       
       this.tradeTypeOptions = [
