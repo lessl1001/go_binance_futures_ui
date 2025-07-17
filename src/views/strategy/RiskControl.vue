@@ -714,16 +714,37 @@ export default {
     isFrozen(row) {
       // 判断冻结状态
       const now = Math.floor(Date.now() / 1000)
-      return row.freeze_until && row.freeze_until > now
+      
+      // 检查是否达到冻结次数阈值
+      const reachedLossThreshold = row.loss_count >= row.freeze_on_loss_count
+      
+      // 检查是否在冻结时间内
+      const inFreezeTime = row.freeze_until && row.freeze_until > now
+      
+      // 任一条件满足即为冻结状态
+      return reachedLossThreshold || inFreezeTime
     },
     formatFreezeStatus(row) {
-      if (!this.isFrozen(row)) {
-        return '正常'
-      } else {
-        const now = Math.floor(Date.now() / 1000)
+      const now = Math.floor(Date.now() / 1000)
+      const reachedLossThreshold = row.loss_count >= row.freeze_on_loss_count
+      const inFreezeTime = row.freeze_until && row.freeze_until > now
+      
+      if (reachedLossThreshold && inFreezeTime) {
+        // 达到阈值且在冻结时间内
         const remainSec = row.freeze_until - now
         const remainHour = Math.ceil(remainSec / 3600)
         return `已冻结(${remainHour}小时)`
+      } else if (reachedLossThreshold) {
+        // 达到阈值但冻结时间已过或未设置
+        return '已冻结(达到阈值)'
+      } else if (inFreezeTime) {
+        // 未达到阈值但在冻结时间内
+        const remainSec = row.freeze_until - now
+        const remainHour = Math.ceil(remainSec / 3600)
+        return `已冻结(${remainHour}小时)`
+      } else {
+        // 未达到阈值且不在冻结时间内
+        return '正常'
       }
     },
     async handleUnfreeze(row) {
