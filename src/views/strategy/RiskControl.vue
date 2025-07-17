@@ -506,14 +506,18 @@ export default {
         is_profit: [{ required: true, message: '请选择交易结果', trigger: 'change' }],
       },
       testLoading: false,
+      // 冻结状态自动刷新定时器
+      freezeStatusTimer: null,
     }
   },
   created() {
     this.loadOptions()
     this.fetchData()
+    this.startFreezeStatusTimer()
   },
   beforeDestroy() {
-    // Component cleanup
+    // 清理定时器
+    this.clearFreezeStatusTimer()
   },
   methods: {
     async loadOptions() {
@@ -732,10 +736,10 @@ export default {
       const inFreezeTime = row.freeze_until && row.freeze_until > now
       
       if (reachedLossThreshold && inFreezeTime) {
-        // 达到阈值且在冻结时间内
+        // 达到阈值且在冻结时间内，显示剩余时间
         const remainSec = row.freeze_until - now
         const remainHour = Math.ceil(remainSec / 3600)
-        return `已冻结(${remainHour}小时)`
+        return `已冻结(达到阈值,剩余${remainHour}小时)`
       } else if (reachedLossThreshold) {
         // 达到阈值但冻结时间已过或未设置
         return '已冻结(达到阈值)'
@@ -743,7 +747,7 @@ export default {
         // 未达到阈值但在冻结时间内
         const remainSec = row.freeze_until - now
         const remainHour = Math.ceil(remainSec / 3600)
-        return `已冻结(${remainHour}小时)`
+        return `已冻结(剩余${remainHour}小时)`
       } else {
         // 未达到阈值且不在冻结时间内
         return '正常'
@@ -1060,6 +1064,58 @@ export default {
       } finally {
         this.testLoading = false
       }
+    },
+    
+    // 冻结状态自动刷新相关方法
+    startFreezeStatusTimer() {
+      console.log('=== STARTING FREEZE STATUS AUTO-REFRESH ===')
+      
+      // 清除已存在的定时器
+      this.clearFreezeStatusTimer()
+      
+      // 每分钟检查冻结状态
+      this.freezeStatusTimer = setInterval(() => {
+        this.checkAndUpdateFreezeStatus()
+      }, 60000) // 60秒检查一次
+      
+      console.log('Freeze status auto-refresh started')
+    },
+    
+    clearFreezeStatusTimer() {
+      if (this.freezeStatusTimer) {
+        clearInterval(this.freezeStatusTimer)
+        this.freezeStatusTimer = null
+        console.log('Freeze status auto-refresh cleared')
+      }
+    },
+    
+    checkAndUpdateFreezeStatus() {
+      console.log('=== CHECKING FREEZE STATUS ===')
+      const now = Math.floor(Date.now() / 1000)
+      let hasStatusChanged = false
+      
+      // 检查每条记录的冻结状态
+      this.list.forEach(row => {
+        // 检查冻结时间是否已过期
+        if (row.freeze_until && row.freeze_until <= now) {
+          // 冻结时间已过期，但之前可能显示为冻结状态
+          const reachedLossThreshold = row.loss_count >= row.freeze_on_loss_count
+          
+          // 如果只是因为时间冻结（不是阈值冻结），那么状态应该变为正常
+          if (!reachedLossThreshold) {
+            hasStatusChanged = true
+            console.log(`Strategy ${row.symbol}-${row.strategy_name} freeze time expired, changing to normal`)
+          }
+        }
+      })
+      
+      // 如果有状态变化，强制更新UI
+      if (hasStatusChanged) {
+        console.log('Freeze status changed, forcing UI update')
+        this.$forceUpdate()
+      }
+      
+      console.log('Freeze status check completed')
     },
   },
   watch: {
