@@ -197,6 +197,7 @@
         width="250"
       >
         <template slot-scope="scope">
+          <!--
           <el-button
             type="warning"
             size="mini"
@@ -212,6 +213,7 @@
           >
             重置亏损
           </el-button>
+          -->
           <el-button
             type="danger"
             size="mini"
