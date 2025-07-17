@@ -751,6 +751,17 @@ export default {
       console.log('=== UNFREEZE OPERATION ===')
       console.log('Unfreezing row:', row)
       
+      // 验证必要字段是否存在
+      if (!row.symbol || !row.strategy_name || !row.trade_type) {
+        console.error('Missing required fields for unfreeze:', {
+          symbol: row.symbol,
+          strategy_name: row.strategy_name,
+          trade_type: row.trade_type
+        })
+        this.$message.error('解冻失败：记录缺少必要信息（币种、策略名称、交易类型），请先更新记录')
+        return
+      }
+      
       try {
         await this.$confirm('确定要解冻该策略吗？', '确认操作', {
           confirmButtonText: '确定',
@@ -758,23 +769,43 @@ export default {
           type: 'warning'
         })
         
-        await unfreezeStrategy({
-          symbol: row.symbol,
-          strategy_name: row.strategy_name,
-          trade_type: row.trade_type
-        })
+        const unfreezeData = {
+          symbol: row.symbol.trim(),
+          strategy_name: row.strategy_name.trim(),
+          trade_type: row.trade_type.trim()
+        }
+        
+        console.log('Sending unfreeze data:', unfreezeData)
+        
+        await unfreezeStrategy(unfreezeData)
         this.$message.success('解冻成功')
         this.fetchData()
       } catch (error) {
         console.error('Unfreeze error:', error)
         if (error !== 'cancel') {
-          this.$message.error('解冻失败，请重试')
+          // 更详细的错误处理
+          if (error.response && error.response.data && error.response.data.message) {
+            this.$message.error(`解冻失败：${error.response.data.message}`)
+          } else {
+            this.$message.error('解冻失败，请重试')
+          }
         }
       }
     },
     async handleResetLoss(row) {
       console.log('=== RESET LOSS OPERATION ===')
       console.log('Resetting loss for row:', row)
+      
+      // 验证必要字段是否存在
+      if (!row.symbol || !row.strategy_name || !row.trade_type) {
+        console.error('Missing required fields for reset loss:', {
+          symbol: row.symbol,
+          strategy_name: row.strategy_name,
+          trade_type: row.trade_type
+        })
+        this.$message.error('重置亏损失败：记录缺少必要信息（币种、策略名称、交易类型），请先更新记录')
+        return
+      }
       
       try {
         await this.$confirm('确定要重置该策略的亏损次数吗？', '确认操作', {
@@ -783,17 +814,26 @@ export default {
           type: 'warning'
         })
         
-        await resetStrategyLoss({
-          symbol: row.symbol,
-          strategy_name: row.strategy_name,
-          trade_type: row.trade_type
-        })
+        const resetData = {
+          symbol: row.symbol.trim(),
+          strategy_name: row.strategy_name.trim(),
+          trade_type: row.trade_type.trim()
+        }
+        
+        console.log('Sending reset loss data:', resetData)
+        
+        await resetStrategyLoss(resetData)
         this.$message.success('重置亏损成功')
         this.fetchData()
       } catch (error) {
         console.error('Reset loss error:', error)
         if (error !== 'cancel') {
-          this.$message.error('重置亏损失败，请重试')
+          // 更详细的错误处理
+          if (error.response && error.response.data && error.response.data.message) {
+            this.$message.error(`重置亏损失败：${error.response.data.message}`)
+          } else {
+            this.$message.error('重置亏损失败，请重试')
+          }
         }
       }
     },
