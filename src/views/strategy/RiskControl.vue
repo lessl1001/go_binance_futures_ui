@@ -7,21 +7,21 @@
           <el-row :gutter="20">
             <el-col :span="6">
               <el-form-item label="币种">
-                <el-select v-model="filterForm.symbol" clearable placeholder="请选择币种" @change="handleFilter">
+                <el-select v-model="filterForm.coin" clearable placeholder="请选择币种" @change="handleFilter">
                   <el-option v-for="coin in symbolOptions" :key="coin.value" :label="coin.label" :value="coin.value" />
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="6">
               <el-form-item label="策略">
-                <el-select v-model="filterForm.strategy_name" clearable placeholder="请选择策略" @change="handleFilter">
+                <el-select v-model="filterForm.strategy" clearable placeholder="请选择策略" @change="handleFilter">
                   <el-option v-for="strategy in strategyOptions" :key="strategy.value" :label="strategy.label" :value="strategy.value" />
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="6">
               <el-form-item label="交易类型">
-                <el-select v-model="filterForm.trade_type" clearable placeholder="请选择交易类型" @change="handleFilter">
+                <el-select v-model="filterForm.tradeType" clearable placeholder="请选择交易类型" @change="handleFilter">
                   <el-option v-for="type in tradeTypeOptions" :key="type.value" :label="type.label" :value="type.value" />
                 </el-select>
               </el-form-item>
@@ -48,8 +48,8 @@
     </div>
 
     <!-- 主表格 -->
-    <el-table v-loading="listLoading" :data="filteredList" element-loading-text="Loading" border fit size="mini" highlight-current-row style="margin-top: 10px">
-      <el-table-column label="币种" prop="symbol" align="center" width="200" />
+    <el-table v-loading="listLoading" :data="list" element-loading-text="Loading" border fit size="mini" highlight-current-row style="margin-top: 10px">
+      <el-table-column label="币种" prop="symbol" align="center" width="250" />
       <el-table-column label="策略" prop="strategy_name" align="center" width="150" />
       <el-table-column label="交易类型" prop="trade_type" align="center" width="100">
         <template slot-scope="scope">
@@ -60,16 +60,12 @@
       </el-table-column>
       <el-table-column label="连续亏损阈值" align="center" width="140">
         <template slot-scope="scope">
-          <span class="editable-cell" @click="handleEdit(scope.row)">
-            {{ scope.row.freeze_on_loss_count }}
-          </span>
+          <el-input-number v-model="scope.row.freeze_on_loss_count" :min="0" :max="100" size="mini" controls-position="right" @blur="handleInlineEdit(scope.row)" />
         </template>
       </el-table-column>
       <el-table-column label="冻结时长(小时)" align="center" width="140">
         <template slot-scope="scope">
-          <span class="editable-cell" @click="handleEdit(scope.row)">
-            {{ scope.row.freeze_hours }}
-          </span>
+          <el-input-number v-model="scope.row.freeze_hours" :min="0" :max="168" size="mini" controls-position="right" @blur="handleInlineEdit(scope.row)" />
         </template>
       </el-table-column>
       <el-table-column label="当前亏损次数" align="center" width="120">
@@ -96,7 +92,7 @@
     <!-- 分页 -->
     <pagination v-show="total > 0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="fetchData" />
 
-    <!-- 新增弹窗 -->
+    <!-- 新增/编辑弹窗 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="500px" @close="resetForm">
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="币种" prop="symbol">
@@ -121,45 +117,9 @@
           <el-input-number v-model="form.freeze_hours" :min="0.1" :max="168" :step="0.1" controls-position="right" />
         </el-form-item>
       </el-form>
-      <div class="dialog-footer" slot="footer">
+      <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="submitLoading" @click="submitForm">{{ isEdit ? '更新' : '保存' }}</el-button>
-      </div>
-    </el-dialog>
-
-    <!-- 编辑弹窗 -->
-    <el-dialog title="编辑风控配置" :visible.sync="editDialogVisible" width="500px" @close="resetEditForm">
-      <div style="margin-bottom: 20px;">
-        <el-alert
-          title="请确认本次操作的三元组"
-          type="info"
-          :closable="false"
-        >
-          <div style="margin-top: 10px;">
-            当前配置：币种 <b>{{ editForm.symbol }}</b>，策略 <b>{{ editForm.strategy_name }}</b>，交易类型 <b>{{ formatTradeType(editForm.trade_type) }}</b>
-          </div>
-        </el-alert>
-      </div>
-      <el-form ref="editFormRef" :model="editForm" :rules="editRules" label-width="120px">
-        <el-form-item label="币种">
-          <el-input v-model="editForm.symbol" disabled />
-        </el-form-item>
-        <el-form-item label="策略">
-          <el-input v-model="editForm.strategy_name" disabled />
-        </el-form-item>
-        <el-form-item label="交易类型">
-          <el-input v-model="formatTradeType(editForm.trade_type)" disabled />
-        </el-form-item>
-        <el-form-item label="连续亏损阈值" prop="freeze_on_loss_count">
-          <el-input-number v-model="editForm.freeze_on_loss_count" :min="1" :max="100" controls-position="right" />
-        </el-form-item>
-        <el-form-item label="冻结时长(小时)" prop="freeze_hours">
-          <el-input-number v-model="editForm.freeze_hours" :min="0.1" :max="168" :step="0.1" controls-position="right" />
-        </el-form-item>
-      </el-form>
-      <div class="dialog-footer" slot="footer">
-        <el-button @click="editDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitEditLoading" @click="submitEditForm">确认修改</el-button>
       </div>
     </el-dialog>
 
@@ -172,7 +132,7 @@
         <el-table-column label="币种" prop="symbol" width="100" align="center" />
         <el-table-column label="策略" prop="strategy_name" width="150" align="center" />
         <el-table-column label="交易类型" prop="trade_type" width="100" align="center">
-          <template slot-scope="scope">{{ formatTradeType(scope.row.trade_type) }}</template>
+          <template slot-scope="scope">{{ scope.row.trade_type === 'real' ? '实盘' : '测试' }}</template>
         </el-table-column>
         <el-table-column label="操作类型" prop="operation" width="120" align="center">
           <template slot-scope="scope">
@@ -250,9 +210,9 @@ export default {
       strategyOptions: [],
       tradeTypeOptions: [],
       filterForm: {
-        symbol: '',
-        strategy_name: '',
-        trade_type: '',
+        coin: '',
+        strategy: '',
+        tradeType: '',
         freezeStatus: '',
       },
       dialogVisible: false,
@@ -273,20 +233,6 @@ export default {
         freeze_on_loss_count: [{ required: true, message: '请输入连续亏损阈值', trigger: 'blur' }],
         freeze_hours: [{ required: true, message: '请输入冻结时长', trigger: 'blur' }],
       },
-      editDialogVisible: false,
-      editForm: {
-        id: null,
-        symbol: '',
-        strategy_name: '',
-        trade_type: '',
-        freeze_on_loss_count: 1,
-        freeze_hours: 1,
-      },
-      editRules: {
-        freeze_on_loss_count: [{ required: true, message: '请输入连续亏损阈值', trigger: 'blur' }],
-        freeze_hours: [{ required: true, message: '请输入冻结时长', trigger: 'blur' }],
-      },
-      submitEditLoading: false,
       showLogsDialog: false,
       logs: [],
       logsLoading: false,
@@ -308,24 +254,6 @@ export default {
       statusCheckLoading: false,
     }
   },
-  computed: {
-    filteredList() {
-      return this.list.filter(row => {
-        let match = true;
-        if (this.filterForm.symbol) match = match && row.symbol === this.filterForm.symbol;
-        if (this.filterForm.strategy_name) match = match && row.strategy_name === this.filterForm.strategy_name;
-        if (this.filterForm.trade_type) match = match && row.trade_type === this.filterForm.trade_type;
-        if (this.filterForm.freezeStatus) {
-          if (this.filterForm.freezeStatus === 'frozen') {
-            match = match && this.isFrozen(row);
-          } else if (this.filterForm.freezeStatus === 'normal') {
-            match = match && !this.isFrozen(row);
-          }
-        }
-        return match;
-      });
-    },
-  },
   created() {
     this.loadOptions()
     this.fetchData()
@@ -335,6 +263,13 @@ export default {
     this.clearFreezeStatusTimer()
   },
   methods: {
+    // 补全参数，加兜底逻辑，类型安全且trim
+    completeRowParams(row) {
+      row.symbol = (typeof row.symbol === 'string' && row.symbol.trim()) ? row.symbol.trim() : (this.symbolOptions[0]?.value || 'BTCUSDT')
+      row.strategy_name = (typeof row.strategy_name === 'string' && row.strategy_name.trim()) ? row.strategy_name.trim() : (this.strategyOptions[0]?.value || 'test_strategy')
+      row.trade_type = (typeof row.trade_type === 'string' && row.trade_type.trim()) ? row.trade_type.trim() : (this.tradeTypeOptions[0]?.value || 'test')
+    },
+    // 选项加载，加兜底逻辑
     async loadOptions() {
       try {
         const response = await getStrategyFreezeOptions()
@@ -346,6 +281,23 @@ export default {
         this.strategyOptions = []
         this.tradeTypeOptions = []
       }
+      if (!Array.isArray(this.symbolOptions) || this.symbolOptions.length === 0) {
+        this.symbolOptions = [
+          { label: 'BTCUSDT', value: 'BTCUSDT' },
+          { label: 'ETHUSDT', value: 'ETHUSDT' }
+        ]
+      }
+      if (!Array.isArray(this.strategyOptions) || this.strategyOptions.length === 0) {
+        this.strategyOptions = [
+          { label: 'test_strategy', value: 'test_strategy' }
+        ]
+      }
+      if (!Array.isArray(this.tradeTypeOptions) || this.tradeTypeOptions.length === 0) {
+        this.tradeTypeOptions = [
+          { label: '实盘', value: 'real' },
+          { label: '测试', value: 'test' }
+        ]
+      }
     },
     async fetchData() {
       this.listLoading = true
@@ -354,18 +306,136 @@ export default {
           page: this.listQuery.page,
           pageSize: this.listQuery.limit,
         }
-        if (this.filterForm.symbol) params.symbol = this.filterForm.symbol
-        if (this.filterForm.strategy_name) params.strategy_name = this.filterForm.strategy_name
-        if (this.filterForm.trade_type) params.trade_type = this.filterForm.trade_type
+        if (this.filterForm.coin) params.symbol = this.filterForm.coin
+        if (this.filterForm.strategy) params.strategy_name = this.filterForm.strategy
+        if (this.filterForm.tradeType) params.trade_type = this.filterForm.tradeType
         const response = await getStrategyFreezeList(params)
-        this.list = response.data.list || []
+        // 这里给每一行补全参数，彻底防呆
+        this.list = (response.data.list || []).map(item => ({
+          ...item,
+          symbol: (typeof item.symbol === 'string' && item.symbol.trim()) ? item.symbol.trim() : (this.symbolOptions[0]?.value || 'BTCUSDT'),
+          strategy_name: (typeof item.strategy_name === 'string' && item.strategy_name.trim()) ? item.strategy_name.trim() : (this.strategyOptions[0]?.value || 'test_strategy'),
+          trade_type: (typeof item.trade_type === 'string' && item.trade_type.trim()) ? item.trade_type.trim() : (this.tradeTypeOptions[0]?.value || 'test'),
+        }))
         this.total = response.data.total || 0
+        if (this.filterForm.freezeStatus) {
+          this.list = this.list.filter(row => {
+            if (this.filterForm.freezeStatus === 'frozen') {
+              return this.isFrozen(row)
+            } else if (this.filterForm.freezeStatus === 'normal') {
+              return !this.isFrozen(row)
+            }
+            return true
+          })
+        }
       } catch (error) {
         this.list = []
         this.total = 0
         this.$message.error('获取风控数据失败')
       } finally {
         this.listLoading = false
+      }
+    },
+    async handleInlineEdit(row) {
+      try {
+        await updateStrategyFreeze(row.id, {
+          freeze_on_loss_count: row.freeze_on_loss_count,
+          freeze_hours: row.freeze_hours,
+          loss_count: row.loss_count || 0,
+        })
+        this.$message.success('保存成功')
+        this.fetchData()
+      } catch (error) {
+        this.$message.error('保存失败，请重试')
+      }
+    },
+    handleFilter() {
+      this.listQuery.page = 1
+      this.fetchData()
+    },
+    isFrozen(row) {
+      const now = Math.floor(Date.now() / 1000)
+      return row.freeze_until && row.freeze_until > now
+    },
+    formatFreezeStatus(row) {
+      if (!this.isFrozen(row)) {
+        return '正常'
+      } else {
+        const now = Math.floor(Date.now() / 1000)
+        const remainSec = row.freeze_until - now
+        const remainHour = Math.ceil(remainSec / 3600)
+        return `已冻结(${remainHour}小时)`
+      }
+    },
+    async handleUnfreeze(row) {
+      this.completeRowParams(row)
+      try {
+        await this.$confirm('确定要解冻该策略吗？', '确认操作', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+        })
+        await unfreezeStrategy({
+          symbol: row.symbol,
+          strategy_name: row.strategy_name,
+          trade_type: row.trade_type,
+        })
+        this.$message.success('解冻成功')
+        this.fetchData()
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('解冻失败，请重试')
+        }
+      }
+    },
+    async handleResetLoss(row) {
+      // 补全参数
+      row.symbol = (typeof row.symbol === 'string' && row.symbol.trim()) ? row.symbol.trim() : (this.symbolOptions[0]?.value || 'BTCUSDT')
+      row.strategy_name = (typeof row.strategy_name === 'string' && row.strategy_name.trim()) ? row.strategy_name.trim() : (this.strategyOptions[0]?.value || 'test_strategy')
+      row.trade_type = (typeof row.trade_type === 'string' && row.trade_type.trim()) ? row.trade_type.trim() : (this.tradeTypeOptions[0]?.value || 'test')
+
+      // 打印调试
+      console.log('重置亏损参数:', row.symbol, row.strategy_name, row.trade_type)
+
+      // 防止多次触发
+      if (!row.symbol || !row.strategy_name || !row.trade_type) {
+        this.$message.error('参数不全，无法重置')
+        return
+      }
+
+      try {
+        await this.$confirm('确定要重置该策略的亏损次数吗？', '确认操作', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+        })
+        await resetStrategyLoss({
+          symbol: row.symbol,
+          strategy_name: row.strategy_name,
+          trade_type: row.trade_type,
+        })
+        this.$message.success('重置亏损成功')
+        this.fetchData()
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('重置亏损失败，请重试')
+        }
+      }
+    },
+    async handleDelete(row) {
+      try {
+        await this.$confirm('确定要删除该配置吗？删除后无法恢复！', '确认删除', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+        })
+        await deleteStrategyFreeze(row.id)
+        this.$message.success('删除成功')
+        this.fetchData()
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('删除失败，请重试')
+        }
       }
     },
     handleAdd() {
@@ -387,37 +457,9 @@ export default {
         this.$refs.form.resetFields()
       }
     },
-    handleEdit(row) {
-      this.editForm = {
-        id: row.id,
-        symbol: row.symbol,
-        strategy_name: row.strategy_name,
-        trade_type: row.trade_type,
-        freeze_on_loss_count: row.freeze_on_loss_count,
-        freeze_hours: row.freeze_hours,
-      }
-      this.editDialogVisible = true
-    },
-    resetEditForm() {
-      this.editForm = {
-        id: null,
-        symbol: '',
-        strategy_name: '',
-        trade_type: '',
-        freeze_on_loss_count: 1,
-        freeze_hours: 1,
-      }
-      if (this.$refs.editFormRef) {
-        this.$refs.editFormRef.resetFields()
-      }
-    },
     async submitForm() {
       try {
         await this.$refs.form.validate()
-        if (!this.form.symbol || !this.form.strategy_name || !this.form.trade_type) {
-          this.$message.error('币种、策略和交易类型必须选择')
-          return
-        }
         this.submitLoading = true
         await createOrUpdateStrategyFreeze(this.form)
         this.$message.success('操作成功')
@@ -432,137 +474,6 @@ export default {
         }
       } finally {
         this.submitLoading = false
-      }
-    },
-    async submitEditForm() {
-      try {
-        await this.$refs.editFormRef.validate()
-        this.submitEditLoading = true
-        await updateStrategyFreeze(this.editForm.id, {
-          freeze_on_loss_count: this.editForm.freeze_on_loss_count,
-          freeze_hours: this.editForm.freeze_hours,
-        })
-        this.$message.success('修改成功')
-        this.editDialogVisible = false
-        this.fetchData()
-      } catch (error) {
-        this.$message.error('保存失败，请重试')
-      } finally {
-        this.submitEditLoading = false
-      }
-    },
-    isFrozen(row) {
-      const now = Math.floor(Date.now() / 1000)
-      return row.freeze_until && row.freeze_until > now
-    },
-    formatFreezeStatus(row) {
-      if (!this.isFrozen(row)) {
-        return '正常'
-      } else {
-        const now = Math.floor(Date.now() / 1000)
-        const remainSec = row.freeze_until - now
-        const remainHour = Math.ceil(remainSec / 3600)
-        return `已冻结(${remainHour}小时)`
-      }
-    },
-    formatTradeType(tradeType) {
-      return tradeType === 'real' ? '实盘' : tradeType === 'test' ? '测试' : tradeType
-    },
-    async handleUnfreeze(row) {
-      try {
-        await this.$confirm(
-          `确定要解冻该策略吗？\n币种：${row.symbol}\n策略：${row.strategy_name}\n交易类型：${this.formatTradeType(row.trade_type)}`,
-          '确认操作',
-          {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning',
-          }
-        )
-        await unfreezeStrategy({
-          symbol: row.symbol,
-          strategy_name: row.strategy_name,
-          trade_type: row.trade_type,
-        })
-        this.$message.success('解冻成功')
-        this.fetchData()
-      } catch (error) {
-        if (error !== 'cancel') {
-          this.$message.error('解冻失败，请重试')
-        }
-      }
-    },
-    async handleResetLoss(row) {
-      if (!row.symbol || !row.strategy_name || !row.trade_type) {
-        this.$message.error('参数不全，无法重置')
-        return
-      }
-      try {
-        await this.$confirm(
-          `确定要重置该策略的亏损次数吗？\n币种：${row.symbol}\n策略：${row.strategy_name}\n交易类型：${this.formatTradeType(row.trade_type)}`,
-          '确认操作',
-          {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning',
-          }
-        )
-        await resetStrategyLoss({
-          symbol: row.symbol,
-          strategy_name: row.strategy_name,
-          trade_type: row.trade_type,
-        })
-        this.$message.success('重置亏损成功')
-        this.fetchData()
-      } catch (error) {
-        if (error !== 'cancel') {
-          this.$message.error('重置亏损失败，请重试')
-        }
-      }
-    },
-    async handleDelete(row) {
-      try {
-        await this.$confirm(
-          `确定要删除该配置吗？删除后无法恢复！\n币种：${row.symbol}\n策略：${row.strategy_name}\n交易类型：${this.formatTradeType(row.trade_type)}`,
-          '确认删除',
-          {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning',
-          }
-        )
-        await deleteStrategyFreeze(row.id)
-        this.$message.success('删除成功')
-        this.fetchData()
-      } catch (error) {
-        if (error !== 'cancel') {
-          this.$message.error('删除失败，请重试')
-        }
-      }
-    },
-    handleTestTrade() {
-      this.showTestDialog = true
-      this.testForm = {
-        symbol: '',
-        strategy_name: '',
-        trade_type: '',
-        is_profit: true,
-      }
-    },
-    async submitTestTrade() {
-      try {
-        await this.$refs.testForm.validate()
-        this.testLoading = true
-        await simulateTradeResult(this.testForm)
-        this.$message.success('模拟交易成功')
-        this.showTestDialog = false
-        this.fetchData()
-      } catch (error) {
-        if (error !== false) {
-          this.$message.error('模拟交易失败，请重试')
-        }
-      } finally {
-        this.testLoading = false
       }
     },
     async loadLogs() {
@@ -613,6 +524,31 @@ export default {
       }
       return operationMap[operation] || operation
     },
+    handleTestTrade() {
+      this.showTestDialog = true
+      this.testForm = {
+        symbol: '',
+        strategy_name: '',
+        trade_type: '',
+        is_profit: true,
+      }
+    },
+    async submitTestTrade() {
+      try {
+        await this.$refs.testForm.validate()
+        this.testLoading = true
+        await simulateTradeResult(this.testForm)
+        this.$message.success('模拟交易成功')
+        this.showTestDialog = false
+        this.fetchData()
+      } catch (error) {
+        if (error !== false) {
+          this.$message.error('模拟交易失败，请重试')
+        }
+      } finally {
+        this.testLoading = false
+      }
+    },
     startFreezeStatusTimer() {
       this.clearFreezeStatusTimer()
       this.freezeStatusTimer = setInterval(() => {
@@ -630,6 +566,8 @@ export default {
       let hasStatusChanged = false
       const resetPromises = []
       this.list.forEach(row => {
+        // 这里也做防呆处理
+        this.completeRowParams(row)
         if (row.freeze_until && row.freeze_until <= now) {
           const reachedLossThreshold = row.loss_count >= row.freeze_on_loss_count
           if (reachedLossThreshold) {
@@ -690,8 +628,6 @@ export default {
 .el-table .el-button:last-child { margin-right: 0; }
 .dialog-footer { text-align: right; }
 .dialog-footer .el-button { margin-left: 10px; }
-.editable-cell { cursor: pointer; color: #409EFF; font-weight: bold; }
-.editable-cell:hover { text-decoration: underline; }
 .el-input-number { width: 100%; }
 .el-input-number .el-input__inner { transition: all 0.3s ease; border: 1px solid #dcdfe6; }
 .el-input-number:hover .el-input__inner { border-color: #409eff; }
