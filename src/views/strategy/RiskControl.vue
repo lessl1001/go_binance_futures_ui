@@ -122,7 +122,7 @@
         label="币种"
         prop="symbol"
         align="center"
-        width="200"
+        width="250"
       />
       <el-table-column
         label="策略"
