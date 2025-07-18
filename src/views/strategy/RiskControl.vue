@@ -389,7 +389,20 @@ export default {
       }
     },
     async handleResetLoss(row) {
-      this.completeRowParams(row)
+      // 补全参数
+      row.symbol = (typeof row.symbol === 'string' && row.symbol.trim()) ? row.symbol.trim() : (this.symbolOptions[0]?.value || 'BTCUSDT')
+      row.strategy_name = (typeof row.strategy_name === 'string' && row.strategy_name.trim()) ? row.strategy_name.trim() : (this.strategyOptions[0]?.value || 'test_strategy')
+      row.trade_type = (typeof row.trade_type === 'string' && row.trade_type.trim()) ? row.trade_type.trim() : (this.tradeTypeOptions[0]?.value || 'test')
+
+      // 打印调试
+      console.log('重置亏损参数:', row.symbol, row.strategy_name, row.trade_type)
+
+      // 防止多次触发
+      if (!row.symbol || !row.strategy_name || !row.trade_type) {
+        this.$message.error('参数不全，无法重置')
+        return
+      }
+
       try {
         await this.$confirm('确定要重置该策略的亏损次数吗？', '确认操作', {
           confirmButtonText: '确定',
@@ -608,7 +621,6 @@ export default {
 </script>
 
 <style scoped>
-/* ...（样式部分原样保留，无需修改）... */
 .filter-section { margin-bottom: 20px; }
 .action-buttons { margin-bottom: 10px; }
 .action-buttons .el-button { margin-right: 10px; }
