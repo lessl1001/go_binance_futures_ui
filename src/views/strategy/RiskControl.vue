@@ -202,10 +202,9 @@
       <el-table-column
         label="操作"
         align="center"
-        width="250"
+        width="350"
       >
         <template slot-scope="scope">
-          <!--
           <el-button
             type="warning"
             size="mini"
@@ -221,7 +220,6 @@
           >
             重置亏损
           </el-button>
-          -->
           <el-button
             type="danger"
             size="mini"
@@ -437,7 +435,6 @@
         <el-button type="primary" :loading="testLoading" @click="submitTestTrade">确定</el-button>
       </div>
     </el-dialog>
-
   </div>
 </template>
 
@@ -514,9 +511,7 @@ export default {
         is_profit: [{ required: true, message: '请选择交易结果', trigger: 'change' }],
       },
       testLoading: false,
-      // 冻结状态自动刷新定时器
       freezeStatusTimer: null,
-      // 状态检查加载状态
       statusCheckLoading: false,
     }
   },
@@ -526,96 +521,37 @@ export default {
     this.startFreezeStatusTimer()
   },
   beforeDestroy() {
-    // 清理定时器
     this.clearFreezeStatusTimer()
   },
   methods: {
+    completeRowParams(row) {
+      if (!row.symbol) row.symbol = this.symbolOptions[0]?.value || 'BTCUSDT'
+      if (!row.strategy_name) row.strategy_name = this.strategyOptions[0]?.value || 'test_strategy'
+      if (!row.trade_type) row.trade_type = this.tradeTypeOptions[0]?.value || 'test'
+    },
     async loadOptions() {
-      console.log('=== LOADING OPTIONS ===')
-      
-      // 先设置默认选项，确保组件始终可用
-      this.symbolOptions = [
-        { label: 'BTCUSDT', value: 'BTCUSDT' },
-        { label: 'ETHUSDT', value: 'ETHUSDT' },
-        { label: 'ADAUSDT', value: 'ADAUSDT' },
-        { label: 'BNBUSDT', value: 'BNBUSDT' },
-        { label: 'SOLUSDT', value: 'SOLUSDT' },
-        { label: 'XRPUSDT', value: 'XRPUSDT' },
-        { label: 'SUIUSDT', value: 'SUIUSDT' },
-        { label: 'LINKUSDT', value: 'LINKUSDT' },
-        { label: 'LTCUSDT', value: 'LTCUSDT' },
-        { label: 'UNIUSDT', value: 'UNIUSDT' },
-        { label: 'HYPEUSDT', value: 'HYPEUSDT' },
-        { label: 'AVAXUSDT', value: 'AVAXUSDT' },
-        { label: '1000PEPEUSDT', value: '1000PEPEUSDT' },
-        { label: '1000SHIBUSDT', value: '1000SHIBUSDT' },
-        { label: '1000BONKUSDT', value: '1000BONKUSDT' },
-        { label: 'DOGEUSDT', value: 'DOGEUSDT' }
-      ]
-      
-      this.strategyOptions = [
-        { label: 'line1', value: 'line1' },
-        { label: 'line2', value: 'line2' },
-        { label: 'line3', value: 'line3' },
-        { label: 'line4', value: 'line4' },
-        { label: 'line5', value: 'line5' },
-        { label: 'line6', value: 'line6' },
-        { label: 'line7', value: 'line7' },
-        { label: 'test_strategy', value: 'test_strategy' }
-      ]
-      
-      this.tradeTypeOptions = [
-        { label: '实盘', value: 'real' },
-        { label: '测试', value: 'test' }
-      ]
-      
-      // 强制 Vue 更新
-      this.$forceUpdate()
-      
       try {
         const response = await getStrategyFreezeOptions()
-        console.log('Options API response:', response.data)
-        
-        // 验证并使用 API 数据（如果有效）
-        if (response.data.symbols && Array.isArray(response.data.symbols) && response.data.symbols.length > 0) {
-          // 验证每个选项都有有效的 value
-          const validSymbols = response.data.symbols.filter(item => item && item.value && item.value.trim())
-          if (validSymbols.length > 0) {
-            this.symbolOptions = validSymbols
-          }
-        }
-        
-        if (response.data.strategies && Array.isArray(response.data.strategies) && response.data.strategies.length > 0) {
-          const validStrategies = response.data.strategies.filter(item => item && item.value && item.value.trim())
-          if (validStrategies.length > 0) {
-            this.strategyOptions = validStrategies
-          }
-        }
-        
-        if (response.data.tradeTypes && Array.isArray(response.data.tradeTypes) && response.data.tradeTypes.length > 0) {
-          const validTradeTypes = response.data.tradeTypes.filter(item => item && item.value && item.value.trim())
-          if (validTradeTypes.length > 0) {
-            this.tradeTypeOptions = validTradeTypes
-          }
-        }
-        
-        console.log('Options loaded successfully:', {
-          symbols: this.symbolOptions.length,
-          strategies: this.strategyOptions.length,
-          tradeTypes: this.tradeTypeOptions.length
-        })
-        
+        this.symbolOptions = response.data.symbols || []
+        this.strategyOptions = response.data.strategies || []
+        this.tradeTypeOptions = response.data.tradeTypes || []
       } catch (error) {
-        console.error('Failed to load options from API, using defaults:', error)
+        // fallback default options
+        this.symbolOptions = [
+          { label: 'BTCUSDT', value: 'BTCUSDT' },
+          { label: 'ETHUSDT', value: 'ETHUSDT' },
+          { label: 'ADAUSDT', value: 'ADAUSDT' }
+        ]
+        this.strategyOptions = [
+          { label: 'test_strategy', value: 'test_strategy' }
+        ]
+        this.tradeTypeOptions = [
+          { label: '实盘', value: 'real' },
+          { label: '测试', value: 'test' }
+        ]
       }
-      
-      // 再次强制更新，确保选项已加载
-      this.$forceUpdate()
     },
     async fetchData() {
-      console.log('=== FETCHING DATA ===')
-      console.log('Filter params:', this.filterForm)
-      
       this.listLoading = true
       try {
         const params = {
@@ -625,39 +561,11 @@ export default {
         if (this.filterForm.coin) params.symbol = this.filterForm.coin
         if (this.filterForm.strategy) params.strategy_name = this.filterForm.strategy
         if (this.filterForm.tradeType) params.trade_type = this.filterForm.tradeType
-
-        console.log('API params:', params)
-
         const response = await getStrategyFreezeList(params)
-        console.log('API response:', response)
-        
-        // 验证响应数据结构
-        if (!response.data || !response.data.list) {
-          console.error('Invalid API response structure:', response)
-          this.$message.error('获取数据失败：响应格式错误')
-          return
-        }
-        
-        this.list = (response.data.list || [])
+        this.list = (response.data.list || []).map(item => ({
+          ...item,
+        }))
         this.total = response.data.total || 0
-
-        console.log('Data fetched successfully, total:', this.total, 'list length:', this.list.length)
-        
-        // 调试：检查每条记录的关键字段
-        console.log('=== DATA FETCH DEBUG ===')
-        this.list.forEach((item, index) => {
-          console.log(`Record ${index + 1}:`, {
-            id: item.id,
-            idType: typeof item.id,
-            symbol: item.symbol,
-            strategy_name: item.strategy_name,
-            trade_type: item.trade_type,
-            isEmpty: !item.symbol || !item.strategy_name || !item.trade_type,
-            hasValidId: item.id && item.id !== null && item.id !== undefined
-          })
-        })
-
-        // 处理冻结状态筛选
         if (this.filterForm.freezeStatus) {
           this.list = this.list.filter(row => {
             if (this.filterForm.freezeStatus === 'frozen') {
@@ -669,7 +577,6 @@ export default {
           })
         }
       } catch (error) {
-        console.error('Fetch data error:', error)
         this.list = []
         this.total = 0
         this.$message.error('获取风控数据失败')
@@ -678,330 +585,130 @@ export default {
       }
     },
     async handleInlineEdit(row) {
-      console.log('=== INLINE EDIT ===')
-      console.log('Editing row:', row)
-      console.log('Current loss_count before edit:', row.loss_count)
-      
       try {
-        // 创建完整的更新数据，包含所有必要字段
-        // 重要：保留 loss_count 字段，防止当前亏损次数被清零
-        const updateData = {
-          symbol: row.symbol,
-          strategy_name: row.strategy_name,
-          trade_type: row.trade_type,
-          freeze_on_loss_count: Number(row.freeze_on_loss_count),
-          freeze_hours: Number(row.freeze_hours),
-          loss_count: row.loss_count || 0  // 保留当前亏损次数
-        }
-        
-        console.log('Sending update data:', updateData)
-        console.log('Preserving loss_count value:', updateData.loss_count)
-        
-        // 使用 updateStrategyFreeze 进行更新，保留所有字段
-        await updateStrategyFreeze(row.id, updateData)
-        
-        this.$message({
-          message: '修改成功',
-          type: 'success',
-          duration: 2000
+        await updateStrategyFreeze(row.id, {
+          freeze_on_loss_count: row.freeze_on_loss_count,
+          freeze_hours: row.freeze_hours,
+          loss_count: row.loss_count || 0,
         })
-        
-        console.log('Inline edit successful - loss_count preserved')
-        
-        // 可选：刷新数据以确保数据一致性
-        // await this.fetchData()
-        
+        this.$message.success('保存成功')
+        this.fetchData()
       } catch (error) {
-        console.error('Inline edit error:', error)
-        this.$message({
-          message: '修改失败，请重试',
-          type: 'error',
-          duration: 3000
-        })
+        this.$message.error('保存失败，请重试')
       }
     },
     handleFilter() {
-      console.log('=== FILTER OPERATION ===')
-      console.log('Filter form:', this.filterForm)
-      
       this.listQuery.page = 1
       this.fetchData()
     },
     isFrozen(row) {
-      // 判断冻结状态
       const now = Math.floor(Date.now() / 1000)
-      
-      // 检查是否达到冻结次数阈值
-      const reachedLossThreshold = row.loss_count >= row.freeze_on_loss_count
-      
-      // 检查是否在冻结时间内
-      const inFreezeTime = row.freeze_until && row.freeze_until > now
-      
-      // 任一条件满足即为冻结状态
-      return reachedLossThreshold || inFreezeTime
+      return row.freeze_until && row.freeze_until > now
     },
     formatFreezeStatus(row) {
-      const now = Math.floor(Date.now() / 1000)
-      const reachedLossThreshold = row.loss_count >= row.freeze_on_loss_count
-      const inFreezeTime = row.freeze_until && row.freeze_until > now
-      
-      if (reachedLossThreshold) {
-        // 达到阈值就显示已冻结，如果有冻结时间就显示剩余时间
-        if (inFreezeTime) {
-          const remainSec = row.freeze_until - now
-          const remainHour = Math.ceil(remainSec / 3600)
-          return `已冻结(达到阈值,剩余${remainHour}小时)`
-        } else {
-          // 达到阈值但冻结时间已过，这种情况下应该显示冻结状态
-          // 因为loss_count还没有被重置
-          return '已冻结(达到阈值)'
-        }
-      } else if (inFreezeTime) {
-        // 未达到阈值但在冻结时间内（可能是手动冻结）
+      if (!this.isFrozen(row)) {
+        return '正常'
+      } else {
+        const now = Math.floor(Date.now() / 1000)
         const remainSec = row.freeze_until - now
         const remainHour = Math.ceil(remainSec / 3600)
-        return `已冻结(剩余${remainHour}小时)`
-      } else {
-        // 未达到阈值且不在冻结时间内
-        return '正常'
+        return `已冻结(${remainHour}小时)`
       }
     },
     async handleUnfreeze(row) {
-      console.log('=== UNFREEZE OPERATION ===')
-      console.log('Unfreezing row:', row)
-      
-      // 验证必要字段是否存在
-      if (!row.symbol || !row.strategy_name || !row.trade_type) {
-        console.error('Missing required fields for unfreeze:', {
-          symbol: row.symbol,
-          strategy_name: row.strategy_name,
-          trade_type: row.trade_type
-        })
-        this.$message.error('解冻失败：记录缺少必要信息（币种、策略名称、交易类型），请先更新记录')
-        return
-      }
-      
+      this.completeRowParams(row)
       try {
         await this.$confirm('确定要解冻该策略吗？', '确认操作', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
-          type: 'warning'
+          type: 'warning',
         })
-        
-        const unfreezeData = {
-          symbol: row.symbol.trim(),
-          strategy_name: row.strategy_name.trim(),
-          trade_type: row.trade_type.trim()
-        }
-        
-        console.log('Sending unfreeze data:', unfreezeData)
-        
-        await unfreezeStrategy(unfreezeData)
+        await unfreezeStrategy({
+          symbol: row.symbol,
+          strategy_name: row.strategy_name,
+          trade_type: row.trade_type,
+        })
         this.$message.success('解冻成功')
         this.fetchData()
       } catch (error) {
-        console.error('Unfreeze error:', error)
         if (error !== 'cancel') {
-          // 更详细的错误处理
-          if (error.response && error.response.data && error.response.data.message) {
-            this.$message.error(`解冻失败：${error.response.data.message}`)
-          } else {
-            this.$message.error('解冻失败，请重试')
-          }
+          this.$message.error('解冻失败，请重试')
         }
       }
     },
     async handleResetLoss(row) {
-      console.log('=== RESET LOSS OPERATION ===')
-      console.log('Resetting loss for row:', row)
-      
-      // 验证必要字段是否存在
-      if (!row.symbol || !row.strategy_name || !row.trade_type) {
-        console.error('Missing required fields for reset loss:', {
-          symbol: row.symbol,
-          strategy_name: row.strategy_name,
-          trade_type: row.trade_type
-        })
-        this.$message.error('重置亏损失败：记录缺少必要信息（币种、策略名称、交易类型），请先更新记录')
-        return
-      }
-      
+      this.completeRowParams(row)
       try {
         await this.$confirm('确定要重置该策略的亏损次数吗？', '确认操作', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
-          type: 'warning'
+          type: 'warning',
         })
-        
-        const resetData = {
-          symbol: row.symbol.trim(),
-          strategy_name: row.strategy_name.trim(),
-          trade_type: row.trade_type.trim()
-        }
-        
-        console.log('Sending reset loss data:', resetData)
-        
-        await resetStrategyLoss(resetData)
+        await resetStrategyLoss({
+          symbol: row.symbol,
+          strategy_name: row.strategy_name,
+          trade_type: row.trade_type,
+        })
         this.$message.success('重置亏损成功')
         this.fetchData()
       } catch (error) {
-        console.error('Reset loss error:', error)
         if (error !== 'cancel') {
-          // 更详细的错误处理
-          if (error.response && error.response.data && error.response.data.message) {
-            this.$message.error(`重置亏损失败：${error.response.data.message}`)
-          } else {
-            this.$message.error('重置亏损失败，请重试')
-          }
+          this.$message.error('重置亏损失败，请重试')
         }
       }
     },
-    handleDelete(row) {
-      console.log('=== DELETE OPERATION DEBUG ===')
-      console.log('Deleting row:', row)
-      console.log('Row ID:', row.id)
-      console.log('Row ID type:', typeof row.id)
-      
-      // 验证 row.id 是否存在
-      if (!row.id) {
-        console.error('Row ID is missing or invalid:', row.id)
-        this.$message.error('删除失败：记录ID无效')
-        return
+    async handleDelete(row) {
+      try {
+        await this.$confirm('确定要删除该配置吗？删除后无法恢复！', '确认删除', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+        })
+        await deleteStrategyFreeze(row.id)
+        this.$message.success('删除成功')
+        this.fetchData()
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('删除失败，请重试')
+        }
       }
-      
-      this.$confirm(`确定要删除该配置吗？删除后无法恢复！`, '确认删除', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      })
-        .then(async() => {
-          try {
-            console.log('Sending delete request for ID:', row.id)
-            await deleteStrategyFreeze(row.id)
-            console.log('Delete request successful')
-            this.$message.success('删除成功')
-            await this.fetchData()
-          } catch (error) {
-            console.error('Delete error details:', error)
-            
-            // 详细的错误处理
-            if (error.response) {
-              console.log('Error response:', error.response)
-              const status = error.response.status
-              const message = error.response.data?.message || error.message
-              
-              if (status === 404) {
-                this.$message.error('删除失败：记录不存在或已被删除')
-              } else if (status === 403) {
-                this.$message.error('删除失败：无权限删除此记录')
-              } else if (status === 500) {
-                this.$message.error('删除失败：服务器错误')
-              } else {
-                this.$message.error(`删除失败：${message}`)
-              }
-            } else if (error.request) {
-              console.log('Error request:', error.request)
-              this.$message.error('删除失败：网络错误')
-            } else {
-              console.log('Error message:', error.message)
-              this.$message.error(`删除失败：${error.message}`)
-            }
-          }
-        })
-        .catch(() => {
-          console.log('Delete cancelled')
-        })
     },
     handleAdd() {
-      console.log('=== OPENING ADD DIALOG ===')
-      
       this.dialogTitle = '新增风控配置'
       this.isEdit = false
-      
-      // 确保选项已加载
-      if (this.symbolOptions.length === 0 || this.strategyOptions.length === 0) {
-        this.loadOptions()
-      }
-      
-      this.resetForm()
       this.dialogVisible = true
-      
-      // 等待组件渲染完成后再次确认表单状态
-      this.$nextTick(() => {
-        console.log('Form state after dialog open:', this.form)
-        console.log('Available options:', {
-          symbols: this.symbolOptions.length,
-          strategies: this.strategyOptions.length,
-          tradeTypes: this.tradeTypeOptions.length
-        })
-      })
+      this.resetForm()
+      this.loadOptions()
     },
     resetForm() {
-      console.log('=== RESETTING FORM ===')
-      
-      // 使用 Object.assign 保持 Vue 的响应式绑定
-      Object.assign(this.form, {
+      this.form = {
         symbol: '',
         strategy_name: '',
         trade_type: '',
         freeze_on_loss_count: 1,
         freeze_hours: 1,
-      })
-      
-      // 等待 Vue 更新后再重置字段
-      this.$nextTick(() => {
-        if (this.$refs.form) {
-          this.$refs.form.resetFields()
-          this.$refs.form.clearValidate()
-        }
-      })
+      }
+      if (this.$refs.form) {
+        this.$refs.form.resetFields()
+      }
     },
     async submitForm() {
-      console.log('=== FORM SUBMISSION START ===')
-      console.log('Form data before validation:', this.form)
-      
       try {
-        // 验证表单
         await this.$refs.form.validate()
-        
-        // 额外验证必需字段
-        if (!this.form.symbol || !this.form.strategy_name || !this.form.trade_type) {
-          this.$message.error('请选择币种、策略和交易类型')
-          return
-        }
-        
-        console.log('Form validation passed')
         this.submitLoading = true
-        
-        // 创建表单数据
-        const formData = {
-          symbol: this.form.symbol.trim(),
-          strategy_name: this.form.strategy_name.trim(),
-          trade_type: this.form.trade_type.trim(),
-          freeze_on_loss_count: Number(this.form.freeze_on_loss_count),
-          freeze_hours: Number(this.form.freeze_hours)
-        }
-        
-        console.log('Submitting data:', formData)
-        
-        // 提交数据
-        const response = await createOrUpdateStrategyFreeze(formData)
-        console.log('API response:', response)
-        
+        await createOrUpdateStrategyFreeze(this.form)
         this.$message.success('操作成功')
         this.dialogVisible = false
-        
-        // 刷新数据列表
-        await this.fetchData()
-        
+        await Promise.all([
+          this.fetchData(),
+          this.loadOptions()
+        ])
       } catch (error) {
-        console.error('Form submission error:', error)
         if (error !== false) {
           this.$message.error('操作失败，请重试')
         }
       } finally {
         this.submitLoading = false
-        console.log('=== FORM SUBMISSION END ===')
       }
     },
     async loadLogs() {
@@ -1065,7 +772,6 @@ export default {
       try {
         await this.$refs.testForm.validate()
         this.testLoading = true
-        
         await simulateTradeResult(this.testForm)
         this.$message.success('模拟交易成功')
         this.showTestDialog = false
@@ -1078,111 +784,60 @@ export default {
         this.testLoading = false
       }
     },
-    
-    // 冻结状态自动刷新相关方法
     startFreezeStatusTimer() {
-      console.log('=== STARTING FREEZE STATUS AUTO-REFRESH ===')
-      
-      // 清除已存在的定时器
       this.clearFreezeStatusTimer()
-      
-      // 每3分钟检查冻结状态（因为现在需要执行数据库操作，不要太频繁）
       this.freezeStatusTimer = setInterval(() => {
         this.checkAndUpdateFreezeStatus()
-      }, 180000) // 3分钟检查一次
-      
-      console.log('Freeze status auto-refresh started (every 3 minutes)')
+      }, 180000)
     },
-    
     clearFreezeStatusTimer() {
       if (this.freezeStatusTimer) {
         clearInterval(this.freezeStatusTimer)
         this.freezeStatusTimer = null
-        console.log('Freeze status auto-refresh cleared')
       }
     },
-    
     async checkAndUpdateFreezeStatus() {
-      console.log('=== CHECKING FREEZE STATUS ===')
       const now = Math.floor(Date.now() / 1000)
       let hasStatusChanged = false
       const resetPromises = []
-      
-      // 检查每条记录的冻结状态
       this.list.forEach(row => {
-        // 检查冻结时间是否已过期
         if (row.freeze_until && row.freeze_until <= now) {
           const reachedLossThreshold = row.loss_count >= row.freeze_on_loss_count
-          
-          console.log(`Checking row ${row.symbol}-${row.strategy_name}:`, {
-            freeze_until: row.freeze_until,
-            now: now,
-            expired: true,
-            reachedLossThreshold,
-            loss_count: row.loss_count,
-            freeze_on_loss_count: row.freeze_on_loss_count
-          })
-          
-          // 如果冻结时间已过期，需要重置当前亏损次数
           if (reachedLossThreshold) {
-            console.log(`Strategy ${row.symbol}-${row.strategy_name} freeze time expired, resetting loss count`)
             hasStatusChanged = true
-            
-            // 调用重置亏损API来重置loss_count
             if (row.symbol && row.strategy_name && row.trade_type) {
               const resetData = {
                 symbol: row.symbol.trim(),
                 strategy_name: row.strategy_name.trim(),
                 trade_type: row.trade_type.trim()
               }
-              
               resetPromises.push(
                 resetStrategyLoss(resetData).then(() => {
-                  console.log(`Successfully reset loss count for ${row.symbol}-${row.strategy_name}`)
-                  // 更新本地数据
                   row.loss_count = 0
                 }).catch(error => {
-                  console.error(`Failed to reset loss count for ${row.symbol}-${row.strategy_name}:`, error)
                 })
               )
             }
           } else {
-            // 如果只是时间冻结过期（没有达到阈值），也算作状态变化
             hasStatusChanged = true
-            console.log(`Strategy ${row.symbol}-${row.strategy_name} freeze time expired, changing to normal`)
           }
         }
       })
-      
-      // 等待所有重置操作完成
       if (resetPromises.length > 0) {
         try {
           await Promise.all(resetPromises)
-          console.log('All loss count reset operations completed')
-        } catch (error) {
-          console.error('Some loss count reset operations failed:', error)
-        }
+        } catch (error) {}
       }
-      
-      // 如果有状态变化，刷新数据以确保显示最新状态
       if (hasStatusChanged) {
-        console.log('Freeze status changed, refreshing data')
         await this.fetchData()
       }
-      
-      console.log('Freeze status check completed')
     },
-    
-    // 手动检查冻结状态
     async manualCheckFreezeStatus() {
-      console.log('=== MANUAL FREEZE STATUS CHECK ===')
       this.statusCheckLoading = true
-      
       try {
         await this.checkAndUpdateFreezeStatus()
         this.$message.success('冻结状态检查完成')
       } catch (error) {
-        console.error('Manual freeze status check error:', error)
         this.$message.error('冻结状态检查失败，请重试')
       } finally {
         this.statusCheckLoading = false
@@ -1247,7 +902,6 @@ export default {
   border-color: #409eff;
 }
 
-/* 表格内输入框样式 */
 .el-table .el-input-number {
   margin: 0;
 }
@@ -1258,12 +912,10 @@ export default {
   padding: 0 5px;
 }
 
-/* 添加轻微的阴影效果以突出编辑状态 */
 .el-input-number.is-focused {
   box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
 }
 
-/* 状态高亮 */
 .el-tag.el-tag--danger {
   background-color: #fef0f0;
   border-color: #fbc4c4;
@@ -1288,7 +940,6 @@ export default {
   color: #909399;
 }
 
-/* 表格行高亮 */
 .el-table__row.frozen-row {
   background-color: #fef0f0;
 }
@@ -1297,12 +948,10 @@ export default {
   background-color: #f0f9ff;
 }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
   .el-table {
     font-size: 12px;
   }
-  
   .el-button--mini {
     font-size: 10px;
     padding: 5px 8px;
