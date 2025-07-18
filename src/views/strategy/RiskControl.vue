@@ -96,7 +96,7 @@
     <!-- 分页 -->
     <pagination v-show="total > 0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="fetchData" />
 
-    <!-- 新增弹窗 强制选择三元组 -->
+    <!-- 新增弹窗 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="500px" @close="resetForm">
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="币种" prop="symbol">
@@ -127,7 +127,7 @@
       </div>
     </el-dialog>
 
-    <!-- 编辑弹窗，仅阈值/时间可编辑，三元组锁定且展示 -->
+    <!-- 编辑弹窗 -->
     <el-dialog title="编辑风控配置" :visible.sync="editDialogVisible" width="500px" @close="resetEditForm">
       <div style="margin-bottom: 20px;">
         <el-alert
