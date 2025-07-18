@@ -273,7 +273,6 @@ export default {
         freeze_on_loss_count: [{ required: true, message: '请输入连续亏损阈值', trigger: 'blur' }],
         freeze_hours: [{ required: true, message: '请输入冻结时长', trigger: 'blur' }],
       },
-      // 编辑弹窗
       editDialogVisible: false,
       editForm: {
         id: null,
@@ -310,7 +309,6 @@ export default {
     }
   },
   computed: {
-    // 强绑定三元组分页筛选
     filteredList() {
       return this.list.filter(row => {
         let match = true;
@@ -337,7 +335,6 @@ export default {
     this.clearFreezeStatusTimer()
   },
   methods: {
-    // 强制不补默认值，新增必须显式选择三元组
     async loadOptions() {
       try {
         const response = await getStrategyFreezeOptions()
@@ -371,7 +368,6 @@ export default {
         this.listLoading = false
       }
     },
-    // 新增配置弹窗
     handleAdd() {
       this.dialogTitle = '新增风控配置'
       this.isEdit = false
@@ -391,7 +387,6 @@ export default {
         this.$refs.form.resetFields()
       }
     },
-    // 编辑弹窗
     handleEdit(row) {
       this.editForm = {
         id: row.id,
