@@ -60,16 +60,16 @@
       </el-table-column>
       <el-table-column label="连续亏损阈值" align="center" width="140">
         <template slot-scope="scope">
-          <el-button type="text" @click="handleEdit(scope.row)">
+          <span class="editable-cell" @click="handleEdit(scope.row)">
             {{ scope.row.freeze_on_loss_count }}
-          </el-button>
+          </span>
         </template>
       </el-table-column>
       <el-table-column label="冻结时长(小时)" align="center" width="140">
         <template slot-scope="scope">
-          <el-button type="text" @click="handleEdit(scope.row)">
+          <span class="editable-cell" @click="handleEdit(scope.row)">
             {{ scope.row.freeze_hours }}
-          </el-button>
+          </span>
         </template>
       </el-table-column>
       <el-table-column label="当前亏损次数" align="center" width="120">
@@ -690,6 +690,8 @@ export default {
 .el-table .el-button:last-child { margin-right: 0; }
 .dialog-footer { text-align: right; }
 .dialog-footer .el-button { margin-left: 10px; }
+.editable-cell { cursor: pointer; color: #409EFF; font-weight: bold; }
+.editable-cell:hover { text-decoration: underline; }
 .el-input-number { width: 100%; }
 .el-input-number .el-input__inner { transition: all 0.3s ease; border: 1px solid #dcdfe6; }
 .el-input-number:hover .el-input__inner { border-color: #409eff; }
