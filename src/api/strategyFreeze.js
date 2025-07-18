@@ -38,6 +38,10 @@ export function updateStrategyFreeze(id, data) {
 
 // 5. 删除冻结配置
 export function deleteStrategyFreeze(id) {
+  console.log('=== DELETE API CALL DEBUG ===')
+  console.log('Delete ID:', id)
+  console.log('Delete URL:', `/strategy-freeze/${id}`)
+  
   return request({
     url: `/strategy-freeze/${id}`,
     method: 'delete',

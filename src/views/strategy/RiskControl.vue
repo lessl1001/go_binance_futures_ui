@@ -77,14 +77,6 @@
     <!-- Action Buttons -->
     <div class="action-buttons">
       <el-button
-        type="primary"
-        size="mini"
-        :loading="listLoading"
-        @click="fetchData"
-      >
-        刷新
-      </el-button>
-      <el-button
         type="success"
         size="mini"
         @click="handleAdd"
@@ -104,6 +96,14 @@
         @click="handleTestTrade"
       >
         模拟交易
+      </el-button>
+      <el-button
+        type="primary"
+        size="mini"
+        :loading="statusCheckLoading"
+        @click="manualCheckFreezeStatus"
+      >
+        检查冻结状态
       </el-button>
     </div>
 
@@ -154,7 +154,7 @@
             :max="100"
             size="mini"
             controls-position="right"
-            @change="handleParamChange(scope.row)"
+            @blur="handleInlineEdit(scope.row)"
           />
         </template>
       </el-table-column>
@@ -170,7 +170,7 @@
             :max="168"
             size="mini"
             controls-position="right"
-            @change="handleParamChange(scope.row)"
+            @blur="handleInlineEdit(scope.row)"
           />
         </template>
       </el-table-column>
@@ -205,15 +205,6 @@
         width="350"
       >
         <template slot-scope="scope">
-          <el-button
-            type="primary"
-            size="mini"
-            :loading="scope.row.saving"
-            :disabled="!scope.row.changed"
-            @click="saveRow(scope.row)"
-          >
-            保存
-          </el-button>
           <el-button
             type="warning"
             size="mini"
@@ -312,7 +303,9 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="submitForm">确定</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="submitForm">
+          {{ isEdit ? '更新' : '保存' }}
+        </el-button>
       </div>
     </el-dialog>
 
@@ -442,16 +435,6 @@
         <el-button type="primary" :loading="testLoading" @click="submitTestTrade">确定</el-button>
       </div>
     </el-dialog>
-
-    <!-- Auto Refresh Switch -->
-    <div class="auto-refresh-switch">
-      <el-switch
-        v-model="autoRefresh"
-        active-text="自动刷新"
-        inactive-text="手动刷新"
-        @change="handleAutoRefreshChange"
-      />
-    </div>
   </div>
 </template>
 
@@ -528,20 +511,26 @@ export default {
         is_profit: [{ required: true, message: '请选择交易结果', trigger: 'change' }],
       },
       testLoading: false,
-      autoRefresh: false,
-      refreshTimer: null,
+      freezeStatusTimer: null,
+      statusCheckLoading: false,
     }
   },
   created() {
     this.loadOptions()
     this.fetchData()
+    this.startFreezeStatusTimer()
   },
   beforeDestroy() {
-    if (this.refreshTimer) {
-      clearInterval(this.refreshTimer)
-    }
+    this.clearFreezeStatusTimer()
   },
   methods: {
+    // 补全参数，加兜底逻辑
+    completeRowParams(row) {
+      row.symbol = row.symbol || this.symbolOptions[0]?.value || 'BTCUSDT'
+      row.strategy_name = row.strategy_name || this.strategyOptions[0]?.value || 'test_strategy'
+      row.trade_type = row.trade_type || this.tradeTypeOptions[0]?.value || 'test'
+    },
+    // 选项加载，加兜底逻辑
     async loadOptions() {
       try {
         const response = await getStrategyFreezeOptions()
@@ -549,7 +538,27 @@ export default {
         this.strategyOptions = response.data.strategies || []
         this.tradeTypeOptions = response.data.tradeTypes || []
       } catch (error) {
-        console.error('Failed to load options:', error)
+        this.symbolOptions = []
+        this.strategyOptions = []
+        this.tradeTypeOptions = []
+      }
+      // 兜底：只要为空就填默认值
+      if (!Array.isArray(this.symbolOptions) || this.symbolOptions.length === 0) {
+        this.symbolOptions = [
+          { label: 'BTCUSDT', value: 'BTCUSDT' },
+          { label: 'ETHUSDT', value: 'ETHUSDT' }
+        ]
+      }
+      if (!Array.isArray(this.strategyOptions) || this.strategyOptions.length === 0) {
+        this.strategyOptions = [
+          { label: 'test_strategy', value: 'test_strategy' }
+        ]
+      }
+      if (!Array.isArray(this.tradeTypeOptions) || this.tradeTypeOptions.length === 0) {
+        this.tradeTypeOptions = [
+          { label: '实盘', value: 'real' },
+          { label: '测试', value: 'test' }
+        ]
       }
     },
     async fetchData() {
@@ -562,16 +571,11 @@ export default {
         if (this.filterForm.coin) params.symbol = this.filterForm.coin
         if (this.filterForm.strategy) params.strategy_name = this.filterForm.strategy
         if (this.filterForm.tradeType) params.trade_type = this.filterForm.tradeType
-
         const response = await getStrategyFreezeList(params)
         this.list = (response.data.list || []).map(item => ({
           ...item,
-          changed: false,
-          saving: false,
         }))
         this.total = response.data.total || 0
-
-        // 处理冻结状态筛选
         if (this.filterForm.freezeStatus) {
           this.list = this.list.filter(row => {
             if (this.filterForm.freezeStatus === 'frozen') {
@@ -590,15 +594,24 @@ export default {
         this.listLoading = false
       }
     },
+    async handleInlineEdit(row) {
+      try {
+        await updateStrategyFreeze(row.id, {
+          freeze_on_loss_count: row.freeze_on_loss_count,
+          freeze_hours: row.freeze_hours,
+          loss_count: row.loss_count || 0,
+        })
+        this.$message.success('保存成功')
+        this.fetchData()
+      } catch (error) {
+        this.$message.error('保存失败，请重试')
+      }
+    },
     handleFilter() {
       this.listQuery.page = 1
       this.fetchData()
     },
-    handleParamChange(row) {
-      row.changed = true
-    },
     isFrozen(row) {
-      // 判断冻结状态
       const now = Math.floor(Date.now() / 1000)
       return row.freeze_until && row.freeze_until > now
     },
@@ -612,31 +625,14 @@ export default {
         return `已冻结(${remainHour}小时)`
       }
     },
-    async saveRow(row) {
-      row.saving = true
-      try {
-        await updateStrategyFreeze(row.id, {
-          freeze_on_loss_count: row.freeze_on_loss_count,
-          freeze_hours: row.freeze_hours,
-          loss_count: row.loss_count || 0,
-        })
-        row.changed = false
-        this.$message.success('保存成功')
-        this.fetchData()
-      } catch (error) {
-        this.$message.error('保存失败，请重试')
-      } finally {
-        row.saving = false
-      }
-    },
     async handleUnfreeze(row) {
+      this.completeRowParams(row)
       try {
         await this.$confirm('确定要解冻该策略吗？', '确认操作', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning',
         })
-        
         await unfreezeStrategy({
           symbol: row.symbol,
           strategy_name: row.strategy_name,
@@ -651,13 +647,13 @@ export default {
       }
     },
     async handleResetLoss(row) {
+      this.completeRowParams(row)
       try {
         await this.$confirm('确定要重置该策略的亏损次数吗？', '确认操作', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning',
         })
-        
         await resetStrategyLoss({
           symbol: row.symbol,
           strategy_name: row.strategy_name,
@@ -678,7 +674,6 @@ export default {
           cancelButtonText: '取消',
           type: 'warning',
         })
-        
         await deleteStrategyFreeze(row.id)
         this.$message.success('删除成功')
         this.fetchData()
@@ -693,7 +688,7 @@ export default {
       this.isEdit = false
       this.dialogVisible = true
       this.resetForm()
-      this.loadOptions()  // 添加这一行
+      this.loadOptions()
     },
     resetForm() {
       this.form = {
@@ -708,26 +703,24 @@ export default {
       }
     },
     async submitForm() {
-  try {
-    await this.$refs.form.validate()
-    this.submitLoading = true
-    
-    await createOrUpdateStrategyFreeze(this.form)
-    this.$message.success('操作成功')
-    this.dialogVisible = false
-    // 同时刷新数据和选项
-    await Promise.all([
-      this.fetchData(),
-      this.loadOptions()  // 添加这一行
-    ])
-  } catch (error) {
-    if (error !== false) {
-      this.$message.error('操作失败，请重试')
-    }
-  } finally {
-    this.submitLoading = false
-  }
-},
+      try {
+        await this.$refs.form.validate()
+        this.submitLoading = true
+        await createOrUpdateStrategyFreeze(this.form)
+        this.$message.success('操作成功')
+        this.dialogVisible = false
+        await Promise.all([
+          this.fetchData(),
+          this.loadOptions()
+        ])
+      } catch (error) {
+        if (error !== false) {
+          this.$message.error('操作失败，请重试')
+        }
+      } finally {
+        this.submitLoading = false
+      }
+    },
     async loadLogs() {
       this.logsLoading = true
       try {
@@ -789,7 +782,6 @@ export default {
       try {
         await this.$refs.testForm.validate()
         this.testLoading = true
-        
         await simulateTradeResult(this.testForm)
         this.$message.success('模拟交易成功')
         this.showTestDialog = false
@@ -802,16 +794,63 @@ export default {
         this.testLoading = false
       }
     },
-    handleAutoRefreshChange(value) {
-      if (value) {
-        this.refreshTimer = setInterval(() => {
-          this.fetchData()
-        }, 10000) // 每10秒刷新一次
-      } else {
-        if (this.refreshTimer) {
-          clearInterval(this.refreshTimer)
-          this.refreshTimer = null
+    startFreezeStatusTimer() {
+      this.clearFreezeStatusTimer()
+      this.freezeStatusTimer = setInterval(() => {
+        this.checkAndUpdateFreezeStatus()
+      }, 180000)
+    },
+    clearFreezeStatusTimer() {
+      if (this.freezeStatusTimer) {
+        clearInterval(this.freezeStatusTimer)
+        this.freezeStatusTimer = null
+      }
+    },
+    async checkAndUpdateFreezeStatus() {
+      const now = Math.floor(Date.now() / 1000)
+      let hasStatusChanged = false
+      const resetPromises = []
+      this.list.forEach(row => {
+        if (row.freeze_until && row.freeze_until <= now) {
+          const reachedLossThreshold = row.loss_count >= row.freeze_on_loss_count
+          if (reachedLossThreshold) {
+            hasStatusChanged = true
+            if (row.symbol && row.strategy_name && row.trade_type) {
+              const resetData = {
+                symbol: row.symbol.trim(),
+                strategy_name: row.strategy_name.trim(),
+                trade_type: row.trade_type.trim()
+              }
+              resetPromises.push(
+                resetStrategyLoss(resetData).then(() => {
+                  row.loss_count = 0
+                }).catch(error => {
+                })
+              )
+            }
+          } else {
+            hasStatusChanged = true
+          }
         }
+      })
+      if (resetPromises.length > 0) {
+        try {
+          await Promise.all(resetPromises)
+        } catch (error) {}
+      }
+      if (hasStatusChanged) {
+        await this.fetchData()
+      }
+    },
+    async manualCheckFreezeStatus() {
+      this.statusCheckLoading = true
+      try {
+        await this.checkAndUpdateFreezeStatus()
+        this.$message.success('冻结状态检查完成')
+      } catch (error) {
+        this.$message.error('冻结状态检查失败，请重试')
+      } finally {
+        this.statusCheckLoading = false
       }
     },
   },
@@ -838,17 +877,6 @@ export default {
   margin-right: 10px;
 }
 
-.auto-refresh-switch {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1000;
-  background: white;
-  padding: 10px;
-  border-radius: 5px;
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,.1);
-}
-
 .el-table .el-button {
   margin-right: 5px;
   margin-bottom: 5px;
@@ -866,7 +894,37 @@ export default {
   margin-left: 10px;
 }
 
-/* 状态高亮 */
+.el-input-number {
+  width: 100%;
+}
+
+.el-input-number .el-input__inner {
+  transition: all 0.3s ease;
+  border: 1px solid #dcdfe6;
+}
+
+.el-input-number:hover .el-input__inner {
+  border-color: #409eff;
+}
+
+.el-input-number.is-focused .el-input__inner {
+  border-color: #409eff;
+}
+
+.el-table .el-input-number {
+  margin: 0;
+}
+
+.el-table .el-input-number .el-input__inner {
+  text-align: center;
+  font-size: 12px;
+  padding: 0 5px;
+}
+
+.el-input-number.is-focused {
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
+}
+
 .el-tag.el-tag--danger {
   background-color: #fef0f0;
   border-color: #fbc4c4;
@@ -891,7 +949,6 @@ export default {
   color: #909399;
 }
 
-/* 表格行高亮 */
 .el-table__row.frozen-row {
   background-color: #fef0f0;
 }
@@ -900,12 +957,10 @@ export default {
   background-color: #f0f9ff;
 }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
   .el-table {
     font-size: 12px;
   }
-  
   .el-button--mini {
     font-size: 10px;
     padding: 5px 8px;
