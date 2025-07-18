@@ -524,11 +524,13 @@ export default {
     this.clearFreezeStatusTimer()
   },
   methods: {
+    // 补全参数，加兜底逻辑
     completeRowParams(row) {
-      if (!row.symbol) row.symbol = this.symbolOptions[0]?.value || 'BTCUSDT'
-      if (!row.strategy_name) row.strategy_name = this.strategyOptions[0]?.value || 'test_strategy'
-      if (!row.trade_type) row.trade_type = this.tradeTypeOptions[0]?.value || 'test'
+      row.symbol = row.symbol || this.symbolOptions[0]?.value || 'BTCUSDT'
+      row.strategy_name = row.strategy_name || this.strategyOptions[0]?.value || 'test_strategy'
+      row.trade_type = row.trade_type || this.tradeTypeOptions[0]?.value || 'test'
     },
+    // 选项加载，加兜底逻辑
     async loadOptions() {
       try {
         const response = await getStrategyFreezeOptions()
@@ -536,15 +538,23 @@ export default {
         this.strategyOptions = response.data.strategies || []
         this.tradeTypeOptions = response.data.tradeTypes || []
       } catch (error) {
-        // fallback default options
+        this.symbolOptions = []
+        this.strategyOptions = []
+        this.tradeTypeOptions = []
+      }
+      // 兜底：只要为空就填默认值
+      if (!Array.isArray(this.symbolOptions) || this.symbolOptions.length === 0) {
         this.symbolOptions = [
           { label: 'BTCUSDT', value: 'BTCUSDT' },
-          { label: 'ETHUSDT', value: 'ETHUSDT' },
-          { label: 'ADAUSDT', value: 'ADAUSDT' }
+          { label: 'ETHUSDT', value: 'ETHUSDT' }
         ]
+      }
+      if (!Array.isArray(this.strategyOptions) || this.strategyOptions.length === 0) {
         this.strategyOptions = [
           { label: 'test_strategy', value: 'test_strategy' }
         ]
+      }
+      if (!Array.isArray(this.tradeTypeOptions) || this.tradeTypeOptions.length === 0) {
         this.tradeTypeOptions = [
           { label: '实盘', value: 'real' },
           { label: '测试', value: 'test' }
@@ -884,7 +894,6 @@ export default {
   margin-left: 10px;
 }
 
-/* 内联编辑样式 */
 .el-input-number {
   width: 100%;
 }
