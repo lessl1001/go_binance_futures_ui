@@ -1,69 +1,34 @@
 <template>
   <div class="app-container">
-    <!-- Filter Section -->
+    <!-- 筛选条件 -->
     <el-collapse v-model="activeNames" class="filter-section">
       <el-collapse-item title="筛选条件" name="filter">
         <el-form :model="filterForm" label-width="80px">
           <el-row :gutter="20">
             <el-col :span="6">
               <el-form-item label="币种">
-                <el-select
-                  v-model="filterForm.coin"
-                  placeholder="请选择币种"
-                  clearable
-                  @change="handleFilter"
-                >
-                  <el-option
-                    v-for="coin in symbolOptions"
-                    :key="coin.value"
-                    :label="coin.label"
-                    :value="coin.value"
-                  />
+                <el-select v-model="filterForm.coin" clearable placeholder="请选择币种" @change="handleFilter">
+                  <el-option v-for="coin in symbolOptions" :key="coin.value" :label="coin.label" :value="coin.value" />
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="6">
               <el-form-item label="策略">
-                <el-select
-                  v-model="filterForm.strategy"
-                  placeholder="请选择策略"
-                  clearable
-                  @change="handleFilter"
-                >
-                  <el-option
-                    v-for="strategy in strategyOptions"
-                    :key="strategy.value"
-                    :label="strategy.label"
-                    :value="strategy.value"
-                  />
+                <el-select v-model="filterForm.strategy" clearable placeholder="请选择策略" @change="handleFilter">
+                  <el-option v-for="strategy in strategyOptions" :key="strategy.value" :label="strategy.label" :value="strategy.value" />
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="6">
               <el-form-item label="交易类型">
-                <el-select
-                  v-model="filterForm.tradeType"
-                  placeholder="请选择交易类型"
-                  clearable
-                  @change="handleFilter"
-                >
-                  <el-option
-                    v-for="type in tradeTypeOptions"
-                    :key="type.value"
-                    :label="type.label"
-                    :value="type.value"
-                  />
+                <el-select v-model="filterForm.tradeType" clearable placeholder="请选择交易类型" @change="handleFilter">
+                  <el-option v-for="type in tradeTypeOptions" :key="type.value" :label="type.label" :value="type.value" />
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="6">
               <el-form-item label="冻结状态">
-                <el-select
-                  v-model="filterForm.freezeStatus"
-                  placeholder="请选择冻结状态"
-                  clearable
-                  @change="handleFilter"
-                >
+                <el-select v-model="filterForm.freezeStatus" clearable placeholder="请选择冻结状态" @change="handleFilter">
                   <el-option label="正常" value="normal" />
                   <el-option label="已冻结" value="frozen" />
                 </el-select>
@@ -74,353 +39,127 @@
       </el-collapse-item>
     </el-collapse>
 
-    <!-- Action Buttons -->
+    <!-- 操作按钮 -->
     <div class="action-buttons">
-      <el-button
-        type="success"
-        size="mini"
-        @click="handleAdd"
-      >
-        新增配置
-      </el-button>
-      <el-button
-        type="info"
-        size="mini"
-        @click="showLogsDialog = true"
-      >
-        操作日志
-      </el-button>
-      <el-button
-        type="warning"
-        size="mini"
-        @click="handleTestTrade"
-      >
-        模拟交易
-      </el-button>
-      <el-button
-        type="primary"
-        size="mini"
-        :loading="statusCheckLoading"
-        @click="manualCheckFreezeStatus"
-      >
-        检查冻结状态
-      </el-button>
+      <el-button type="success" size="mini" @click="handleAdd">新增配置</el-button>
+      <el-button type="info" size="mini" @click="showLogsDialog = true">操作日志</el-button>
+      <el-button type="warning" size="mini" @click="handleTestTrade">模拟交易</el-button>
+      <el-button type="primary" size="mini" :loading="statusCheckLoading" @click="manualCheckFreezeStatus">检查冻结状态</el-button>
     </div>
 
-    <!-- Main Data Table -->
-    <el-table
-      v-loading="listLoading"
-      :data="list"
-      element-loading-text="Loading"
-      border
-      fit
-      size="mini"
-      highlight-current-row
-      style="margin-top: 10px"
-    >
-      <el-table-column
-        label="币种"
-        prop="symbol"
-        align="center"
-        width="250"
-      />
-      <el-table-column
-        label="策略"
-        prop="strategy_name"
-        align="center"
-        width="150"
-      />
-      <el-table-column
-        label="交易类型"
-        prop="trade_type"
-        align="center"
-        width="100"
-      >
+    <!-- 主表格 -->
+    <el-table v-loading="listLoading" :data="list" element-loading-text="Loading" border fit size="mini" highlight-current-row style="margin-top: 10px">
+      <el-table-column label="币种" prop="symbol" align="center" width="250" />
+      <el-table-column label="策略" prop="strategy_name" align="center" width="150" />
+      <el-table-column label="交易类型" prop="trade_type" align="center" width="100">
         <template slot-scope="scope">
           <el-tag :type="scope.row.trade_type === 'real' ? 'danger' : 'info'" size="mini">
             {{ scope.row.trade_type === 'real' ? '实盘' : '测试' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column
-        label="连续亏损阈值"
-        align="center"
-        width="140"
-      >
+      <el-table-column label="连续亏损阈值" align="center" width="140">
         <template slot-scope="scope">
-          <el-input-number
-            v-model="scope.row.freeze_on_loss_count"
-            :min="0"
-            :max="100"
-            size="mini"
-            controls-position="right"
-            @blur="handleInlineEdit(scope.row)"
-          />
+          <el-input-number v-model="scope.row.freeze_on_loss_count" :min="0" :max="100" size="mini" controls-position="right" @blur="handleInlineEdit(scope.row)" />
         </template>
       </el-table-column>
-      <el-table-column
-        label="冻结时长(小时)"
-        align="center"
-        width="140"
-      >
+      <el-table-column label="冻结时长(小时)" align="center" width="140">
         <template slot-scope="scope">
-          <el-input-number
-            v-model="scope.row.freeze_hours"
-            :min="0"
-            :max="168"
-            size="mini"
-            controls-position="right"
-            @blur="handleInlineEdit(scope.row)"
-          />
+          <el-input-number v-model="scope.row.freeze_hours" :min="0" :max="168" size="mini" controls-position="right" @blur="handleInlineEdit(scope.row)" />
         </template>
       </el-table-column>
-      <el-table-column
-        label="当前亏损次数"
-        align="center"
-        width="120"
-      >
+      <el-table-column label="当前亏损次数" align="center" width="120">
         <template slot-scope="scope">
           <el-tag :type="scope.row.loss_count >= scope.row.freeze_on_loss_count ? 'danger' : 'success'" size="mini">
             {{ scope.row.loss_count }} / {{ scope.row.freeze_on_loss_count }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column
-        label="当前冻结状态"
-        align="center"
-        width="150"
-      >
+      <el-table-column label="当前冻结状态" align="center" width="150">
         <template slot-scope="scope">
-          <el-tag
-            :type="!isFrozen(scope.row) ? 'success' : 'danger'"
-            size="mini"
-          >
-            {{ formatFreezeStatus(scope.row) }}
-          </el-tag>
+          <el-tag :type="!isFrozen(scope.row) ? 'success' : 'danger'" size="mini">{{ formatFreezeStatus(scope.row) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column
-        label="操作"
-        align="center"
-        width="350"
-      >
+      <el-table-column label="操作" align="center" width="350">
         <template slot-scope="scope">
-          <el-button
-            type="warning"
-            size="mini"
-            :disabled="!isFrozen(scope.row)"
-            @click="handleUnfreeze(scope.row)"
-          >
-            解冻
-          </el-button>
-          <el-button
-            type="info"
-            size="mini"
-            @click="handleResetLoss(scope.row)"
-          >
-            重置亏损
-          </el-button>
-          <el-button
-            type="danger"
-            size="mini"
-            @click="handleDelete(scope.row)"
-          >
-            删除
-          </el-button>
+          <el-button type="warning" size="mini" :disabled="!isFrozen(scope.row)" @click="handleUnfreeze(scope.row)">解冻</el-button>
+          <el-button type="info" size="mini" @click="handleResetLoss(scope.row)">重置亏损</el-button>
+          <el-button type="danger" size="mini" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
 
-    <!-- Pagination -->
-    <pagination
-      v-show="total > 0"
-      :total="total"
-      :page.sync="listQuery.page"
-      :limit.sync="listQuery.limit"
-      @pagination="fetchData"
-    />
+    <!-- 分页 -->
+    <pagination v-show="total > 0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="fetchData" />
 
-    <!-- Add/Edit Dialog -->
-    <el-dialog
-      :title="dialogTitle"
-      :visible.sync="dialogVisible"
-      width="500px"
-      @close="resetForm"
-    >
-      <el-form
-        ref="form"
-        :model="form"
-        :rules="rules"
-        label-width="120px"
-      >
+    <!-- 新增/编辑弹窗 -->
+    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="500px" @close="resetForm">
+      <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="币种" prop="symbol">
           <el-select v-model="form.symbol" placeholder="请选择币种" :disabled="isEdit">
-            <el-option
-              v-for="symbol in symbolOptions"
-              :key="symbol.value"
-              :label="symbol.label"
-              :value="symbol.value"
-            />
+            <el-option v-for="symbol in symbolOptions" :key="symbol.value" :label="symbol.label" :value="symbol.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="策略" prop="strategy_name">
           <el-select v-model="form.strategy_name" placeholder="请选择策略" :disabled="isEdit">
-            <el-option
-              v-for="strategy in strategyOptions"
-              :key="strategy.value"
-              :label="strategy.label"
-              :value="strategy.value"
-            />
+            <el-option v-for="strategy in strategyOptions" :key="strategy.value" :label="strategy.label" :value="strategy.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="交易类型" prop="trade_type">
           <el-select v-model="form.trade_type" placeholder="请选择交易类型" :disabled="isEdit">
-            <el-option
-              v-for="type in tradeTypeOptions"
-              :key="type.value"
-              :label="type.label"
-              :value="type.value"
-            />
+            <el-option v-for="type in tradeTypeOptions" :key="type.value" :label="type.label" :value="type.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="连续亏损阈值" prop="freeze_on_loss_count">
-          <el-input-number
-            v-model="form.freeze_on_loss_count"
-            :min="1"
-            :max="100"
-            controls-position="right"
-          />
+          <el-input-number v-model="form.freeze_on_loss_count" :min="1" :max="100" controls-position="right" />
         </el-form-item>
         <el-form-item label="冻结时长(小时)" prop="freeze_hours">
-          <el-input-number
-            v-model="form.freeze_hours"
-            :min="0.1"
-            :max="168"
-            :step="0.1"
-            controls-position="right"
-          />
+          <el-input-number v-model="form.freeze_hours" :min="0.1" :max="168" :step="0.1" controls-position="right" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="submitForm">
-          {{ isEdit ? '更新' : '保存' }}
-        </el-button>
+        <el-button type="primary" :loading="submitLoading" @click="submitForm">{{ isEdit ? '更新' : '保存' }}</el-button>
       </div>
     </el-dialog>
 
-    <!-- Logs Dialog -->
-    <el-dialog
-      title="操作日志"
-      :visible.sync="showLogsDialog"
-      width="80%"
-    >
-      <el-table
-        v-loading="logsLoading"
-        :data="logs"
-        border
-        fit
-        size="mini"
-        height="400"
-      >
-        <el-table-column
-          label="时间"
-          prop="created_at"
-          width="160"
-          align="center"
-        >
+    <!-- 日志弹窗 -->
+    <el-dialog title="操作日志" :visible.sync="showLogsDialog" width="80%">
+      <el-table v-loading="logsLoading" :data="logs" border fit size="mini" height="400">
+        <el-table-column label="时间" prop="created_at" width="160" align="center">
+          <template slot-scope="scope">{{ formatDate(scope.row.created_at) }}</template>
+        </el-table-column>
+        <el-table-column label="币种" prop="symbol" width="100" align="center" />
+        <el-table-column label="策略" prop="strategy_name" width="150" align="center" />
+        <el-table-column label="交易类型" prop="trade_type" width="100" align="center">
+          <template slot-scope="scope">{{ scope.row.trade_type === 'real' ? '实盘' : '测试' }}</template>
+        </el-table-column>
+        <el-table-column label="操作类型" prop="operation" width="120" align="center">
           <template slot-scope="scope">
-            {{ formatDate(scope.row.created_at) }}
+            <el-tag :type="getOperationTagType(scope.row.operation)" size="mini">{{ formatOperation(scope.row.operation) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column
-          label="币种"
-          prop="symbol"
-          width="100"
-          align="center"
-        />
-        <el-table-column
-          label="策略"
-          prop="strategy_name"
-          width="150"
-          align="center"
-        />
-        <el-table-column
-          label="交易类型"
-          prop="trade_type"
-          width="100"
-          align="center"
-        >
-          <template slot-scope="scope">
-            {{ scope.row.trade_type === 'real' ? '实盘' : '测试' }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="操作类型"
-          prop="operation"
-          width="120"
-          align="center"
-        >
-          <template slot-scope="scope">
-            <el-tag :type="getOperationTagType(scope.row.operation)" size="mini">
-              {{ formatOperation(scope.row.operation) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="操作员"
-          prop="operator"
-          width="100"
-          align="center"
-        />
-        <el-table-column
-          label="详情"
-          prop="details"
-          align="left"
-        />
+        <el-table-column label="操作员" prop="operator" width="100" align="center" />
+        <el-table-column label="详情" prop="details" align="left" />
       </el-table>
     </el-dialog>
 
-    <!-- Test Trade Dialog -->
-    <el-dialog
-      title="模拟交易测试"
-      :visible.sync="showTestDialog"
-      width="500px"
-    >
-      <el-form
-        ref="testForm"
-        :model="testForm"
-        :rules="testRules"
-        label-width="120px"
-      >
+    <!-- 模拟交易弹窗 -->
+    <el-dialog title="模拟交易测试" :visible.sync="showTestDialog" width="500px">
+      <el-form ref="testForm" :model="testForm" :rules="testRules" label-width="120px">
         <el-form-item label="币种" prop="symbol">
           <el-select v-model="testForm.symbol" placeholder="请选择币种">
-            <el-option
-              v-for="symbol in symbolOptions"
-              :key="symbol.value"
-              :label="symbol.label"
-              :value="symbol.value"
-            />
+            <el-option v-for="symbol in symbolOptions" :key="symbol.value" :label="symbol.label" :value="symbol.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="策略" prop="strategy_name">
           <el-select v-model="testForm.strategy_name" placeholder="请选择策略">
-            <el-option
-              v-for="strategy in strategyOptions"
-              :key="strategy.value"
-              :label="strategy.label"
-              :value="strategy.value"
-            />
+            <el-option v-for="strategy in strategyOptions" :key="strategy.value" :label="strategy.label" :value="strategy.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="交易类型" prop="trade_type">
           <el-select v-model="testForm.trade_type" placeholder="请选择交易类型">
-            <el-option
-              v-for="type in tradeTypeOptions"
-              :key="type.value"
-              :label="type.label"
-              :value="type.value"
-            />
+            <el-option v-for="type in tradeTypeOptions" :key="type.value" :label="type.label" :value="type.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="交易结果" prop="is_profit">
@@ -526,9 +265,9 @@ export default {
   methods: {
     // 补全参数，加兜底逻辑
     completeRowParams(row) {
-      row.symbol = row.symbol || this.symbolOptions[0]?.value || 'BTCUSDT'
-      row.strategy_name = row.strategy_name || this.strategyOptions[0]?.value || 'test_strategy'
-      row.trade_type = row.trade_type || this.tradeTypeOptions[0]?.value || 'test'
+      row.symbol = row.symbol && row.symbol.trim() ? row.symbol : (this.symbolOptions[0]?.value || 'BTCUSDT')
+      row.strategy_name = row.strategy_name && row.strategy_name.trim() ? row.strategy_name : (this.strategyOptions[0]?.value || 'test_strategy')
+      row.trade_type = row.trade_type && row.trade_type.trim() ? row.trade_type : (this.tradeTypeOptions[0]?.value || 'test')
     },
     // 选项加载，加兜底逻辑
     async loadOptions() {
@@ -542,7 +281,6 @@ export default {
         this.strategyOptions = []
         this.tradeTypeOptions = []
       }
-      // 兜底：只要为空就填默认值
       if (!Array.isArray(this.symbolOptions) || this.symbolOptions.length === 0) {
         this.symbolOptions = [
           { label: 'BTCUSDT', value: 'BTCUSDT' },
@@ -572,9 +310,7 @@ export default {
         if (this.filterForm.strategy) params.strategy_name = this.filterForm.strategy
         if (this.filterForm.tradeType) params.trade_type = this.filterForm.tradeType
         const response = await getStrategyFreezeList(params)
-        this.list = (response.data.list || []).map(item => ({
-          ...item,
-        }))
+        this.list = (response.data.list || []).map(item => ({ ...item }))
         this.total = response.data.total || 0
         if (this.filterForm.freezeStatus) {
           this.list = this.list.filter(row => {
@@ -824,8 +560,7 @@ export default {
               resetPromises.push(
                 resetStrategyLoss(resetData).then(() => {
                   row.loss_count = 0
-                }).catch(error => {
-                })
+                }).catch(() => {})
               )
             }
           } else {
@@ -836,7 +571,7 @@ export default {
       if (resetPromises.length > 0) {
         try {
           await Promise.all(resetPromises)
-        } catch (error) {}
+        } catch {}
       }
       if (hasStatusChanged) {
         await this.fetchData()
@@ -852,7 +587,7 @@ export default {
       } finally {
         this.statusCheckLoading = false
       }
-    },
+    }
   },
   watch: {
     showLogsDialog(val) {
@@ -865,105 +600,28 @@ export default {
 </script>
 
 <style scoped>
-.filter-section {
-  margin-bottom: 20px;
-}
-
-.action-buttons {
-  margin-bottom: 10px;
-}
-
-.action-buttons .el-button {
-  margin-right: 10px;
-}
-
-.el-table .el-button {
-  margin-right: 5px;
-  margin-bottom: 5px;
-}
-
-.el-table .el-button:last-child {
-  margin-right: 0;
-}
-
-.dialog-footer {
-  text-align: right;
-}
-
-.dialog-footer .el-button {
-  margin-left: 10px;
-}
-
-.el-input-number {
-  width: 100%;
-}
-
-.el-input-number .el-input__inner {
-  transition: all 0.3s ease;
-  border: 1px solid #dcdfe6;
-}
-
-.el-input-number:hover .el-input__inner {
-  border-color: #409eff;
-}
-
-.el-input-number.is-focused .el-input__inner {
-  border-color: #409eff;
-}
-
-.el-table .el-input-number {
-  margin: 0;
-}
-
-.el-table .el-input-number .el-input__inner {
-  text-align: center;
-  font-size: 12px;
-  padding: 0 5px;
-}
-
-.el-input-number.is-focused {
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
-}
-
-.el-tag.el-tag--danger {
-  background-color: #fef0f0;
-  border-color: #fbc4c4;
-  color: #f56c6c;
-}
-
-.el-tag.el-tag--success {
-  background-color: #f0f9ff;
-  border-color: #c4e6ff;
-  color: #67c23a;
-}
-
-.el-tag.el-tag--warning {
-  background-color: #fdf6ec;
-  border-color: #f5d19e;
-  color: #e6a23c;
-}
-
-.el-tag.el-tag--info {
-  background-color: #f4f4f5;
-  border-color: #d3d4d6;
-  color: #909399;
-}
-
-.el-table__row.frozen-row {
-  background-color: #fef0f0;
-}
-
-.el-table__row.normal-row {
-  background-color: #f0f9ff;
-}
-
+.filter-section { margin-bottom: 20px; }
+.action-buttons { margin-bottom: 10px; }
+.action-buttons .el-button { margin-right: 10px; }
+.el-table .el-button { margin-right: 5px; margin-bottom: 5px; }
+.el-table .el-button:last-child { margin-right: 0; }
+.dialog-footer { text-align: right; }
+.dialog-footer .el-button { margin-left: 10px; }
+.el-input-number { width: 100%; }
+.el-input-number .el-input__inner { transition: all 0.3s ease; border: 1px solid #dcdfe6; }
+.el-input-number:hover .el-input__inner { border-color: #409eff; }
+.el-input-number.is-focused .el-input__inner { border-color: #409eff; }
+.el-table .el-input-number { margin: 0; }
+.el-table .el-input-number .el-input__inner { text-align: center; font-size: 12px; padding: 0 5px; }
+.el-input-number.is-focused { box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1); }
+.el-tag.el-tag--danger { background-color: #fef0f0; border-color: #fbc4c4; color: #f56c6c; }
+.el-tag.el-tag--success { background-color: #f0f9ff; border-color: #c4e6ff; color: #67c23a; }
+.el-tag.el-tag--warning { background-color: #fdf6ec; border-color: #f5d19e; color: #e6a23c; }
+.el-tag.el-tag--info { background-color: #f4f4f5; border-color: #d3d4d6; color: #909399; }
+.el-table__row.frozen-row { background-color: #fef0f0; }
+.el-table__row.normal-row { background-color: #f0f9ff; }
 @media (max-width: 768px) {
-  .el-table {
-    font-size: 12px;
-  }
-  .el-button--mini {
-    font-size: 10px;
-    padding: 5px 8px;
-  }
+  .el-table { font-size: 12px; }
+  .el-button--mini { font-size: 10px; padding: 5px 8px; }
 }
 </style>
