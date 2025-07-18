@@ -263,11 +263,11 @@ export default {
     this.clearFreezeStatusTimer()
   },
   methods: {
-    // 补全参数，加兜底逻辑
+    // 补全参数，加兜底逻辑，类型安全且trim
     completeRowParams(row) {
-      row.symbol = row.symbol && row.symbol.trim() ? row.symbol : (this.symbolOptions[0]?.value || 'BTCUSDT')
-      row.strategy_name = row.strategy_name && row.strategy_name.trim() ? row.strategy_name : (this.strategyOptions[0]?.value || 'test_strategy')
-      row.trade_type = row.trade_type && row.trade_type.trim() ? row.trade_type : (this.tradeTypeOptions[0]?.value || 'test')
+      row.symbol = (typeof row.symbol === 'string' && row.symbol.trim()) ? row.symbol.trim() : (this.symbolOptions[0]?.value || 'BTCUSDT')
+      row.strategy_name = (typeof row.strategy_name === 'string' && row.strategy_name.trim()) ? row.strategy_name.trim() : (this.strategyOptions[0]?.value || 'test_strategy')
+      row.trade_type = (typeof row.trade_type === 'string' && row.trade_type.trim()) ? row.trade_type.trim() : (this.tradeTypeOptions[0]?.value || 'test')
     },
     // 选项加载，加兜底逻辑
     async loadOptions() {
@@ -310,7 +310,13 @@ export default {
         if (this.filterForm.strategy) params.strategy_name = this.filterForm.strategy
         if (this.filterForm.tradeType) params.trade_type = this.filterForm.tradeType
         const response = await getStrategyFreezeList(params)
-        this.list = (response.data.list || []).map(item => ({ ...item }))
+        // 这里给每一行补全参数，彻底防呆
+        this.list = (response.data.list || []).map(item => ({
+          ...item,
+          symbol: (typeof item.symbol === 'string' && item.symbol.trim()) ? item.symbol.trim() : (this.symbolOptions[0]?.value || 'BTCUSDT'),
+          strategy_name: (typeof item.strategy_name === 'string' && item.strategy_name.trim()) ? item.strategy_name.trim() : (this.strategyOptions[0]?.value || 'test_strategy'),
+          trade_type: (typeof item.trade_type === 'string' && item.trade_type.trim()) ? item.trade_type.trim() : (this.tradeTypeOptions[0]?.value || 'test'),
+        }))
         this.total = response.data.total || 0
         if (this.filterForm.freezeStatus) {
           this.list = this.list.filter(row => {
@@ -547,15 +553,17 @@ export default {
       let hasStatusChanged = false
       const resetPromises = []
       this.list.forEach(row => {
+        // 这里也做防呆处理
+        this.completeRowParams(row)
         if (row.freeze_until && row.freeze_until <= now) {
           const reachedLossThreshold = row.loss_count >= row.freeze_on_loss_count
           if (reachedLossThreshold) {
             hasStatusChanged = true
             if (row.symbol && row.strategy_name && row.trade_type) {
               const resetData = {
-                symbol: row.symbol.trim(),
-                strategy_name: row.strategy_name.trim(),
-                trade_type: row.trade_type.trim()
+                symbol: row.symbol,
+                strategy_name: row.strategy_name,
+                trade_type: row.trade_type
               }
               resetPromises.push(
                 resetStrategyLoss(resetData).then(() => {
@@ -600,6 +608,7 @@ export default {
 </script>
 
 <style scoped>
+/* ...（样式部分原样保留，无需修改）... */
 .filter-section { margin-bottom: 20px; }
 .action-buttons { margin-bottom: 10px; }
 .action-buttons .el-button { margin-right: 10px; }
