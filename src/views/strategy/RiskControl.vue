@@ -475,6 +475,9 @@ export default {
         await this.$refs.editFormRef.validate()
         this.submitEditLoading = true
         await updateStrategyFreeze(this.editForm.id, {
+          symbol: this.editForm.symbol,
+          strategy_name: this.editForm.strategy_name,
+          trade_type: this.editForm.trade_type,
           freeze_on_loss_count: this.editForm.freeze_on_loss_count,
           freeze_hours: this.editForm.freeze_hours,
         })
