@@ -6,6 +6,7 @@ const role = require('./role')
 const article = require('./article')
 const search = require('./remote-search')
 const strategyFreeze = require('./strategy_freeze')
+const strategyRiskControl = require('./strategy_risk_control')
 
 const mocks = [
   ...user,
