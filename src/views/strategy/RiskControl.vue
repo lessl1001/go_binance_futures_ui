@@ -48,50 +48,61 @@
     </div>
 
     <!-- 主表格 -->
-    <el-table v-loading="listLoading" :data="filteredList" element-loading-text="Loading" border fit size="mini" highlight-current-row style="margin-top: 10px">
+    <el-table
+      ref="multipleTable"
+      v-loading="listLoading"
+      :data="filteredList"
+      element-loading-text="Loading"
+      border
+      fit
+      size="mini"
+      highlight-current-row
+      style="margin-top: 10px"
+      @selection-change="handleSelectionChange"
+      @row-click="handleRowClick"
+    >
+      <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="币种" prop="symbol" align="center" width="200" />
       <el-table-column label="策略" prop="strategy_name" align="center" width="150" />
       <el-table-column label="交易类型" prop="trade_type" align="center" width="100">
         <template slot-scope="scope">
-          <el-tag :type="scope.row.trade_type === 'real' ? 'danger' : 'info'" size="mini">
-            {{ scope.row.trade_type === 'real' ? '实盘' : '测试' }}
-          </el-tag>
+          {{ scope.row.trade_type === 'real' ? '实盘' : '测试' }}
         </template>
       </el-table-column>
       <el-table-column label="连续亏损阈值" align="center" width="140">
         <template slot-scope="scope">
-          <span class="editable-cell" @click="handleEdit(scope.row)">
-            {{ scope.row.freeze_on_loss_count }}
-          </span>
+          {{ scope.row.freeze_on_loss_count }}
         </template>
       </el-table-column>
       <el-table-column label="冻结时长(小时)" align="center" width="140">
         <template slot-scope="scope">
-          <span class="editable-cell" @click="handleEdit(scope.row)">
-            {{ scope.row.freeze_hours }}
-          </span>
+          {{ scope.row.freeze_hours }}
         </template>
       </el-table-column>
       <el-table-column label="当前亏损次数" align="center" width="120">
         <template slot-scope="scope">
-          <el-tag :type="scope.row.loss_count >= scope.row.freeze_on_loss_count ? 'danger' : 'success'" size="mini">
-            {{ scope.row.loss_count }} / {{ scope.row.freeze_on_loss_count }}
-          </el-tag>
+          {{ scope.row.loss_count }} / {{ scope.row.freeze_on_loss_count }}
         </template>
       </el-table-column>
       <el-table-column label="当前冻结状态" align="center" width="150">
         <template slot-scope="scope">
-          <el-tag :type="!isFrozen(scope.row) ? 'success' : 'danger'" size="mini">{{ formatFreezeStatus(scope.row) }}</el-tag>
+          {{ formatFreezeStatus(scope.row) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="350">
-        <template slot-scope="scope">
-          <el-button type="warning" size="mini" :disabled="!isFrozen(scope.row)" @click="handleUnfreeze(scope.row)">解冻</el-button>
-          <el-button type="info" size="mini" @click="handleResetLoss(scope.row)">重置亏损</el-button>
-          <el-button type="danger" size="mini" @click="handleDelete(scope.row)">删除</el-button>
+      <el-table-column label="编辑" align="center" width="80">
+        <template>
+          编辑
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- 表格操作按钮 -->
+    <div class="table-actions" style="margin-top: 10px;">
+      <el-button type="warning" size="mini" :disabled="!selectedRow || !isFrozen(selectedRow)" @click="handleUnfreeze(selectedRow)">解冻选中项</el-button>
+      <el-button type="info" size="mini" :disabled="!selectedRow" @click="handleResetLoss(selectedRow)">重置亏损</el-button>
+      <el-button type="primary" size="mini" :disabled="!selectedRow" @click="handleEdit(selectedRow)">编辑选中项</el-button>
+      <el-button type="danger" size="mini" :disabled="!selectedRow" @click="handleDelete(selectedRow)">删除选中项</el-button>
+    </div>
 
     <!-- 分页 -->
     <pagination v-show="total > 0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="fetchData" />
@@ -121,7 +132,7 @@
           <el-input-number v-model="form.freeze_hours" :min="0.1" :max="168" :step="0.1" controls-position="right" />
         </el-form-item>
       </el-form>
-      <div class="dialog-footer" slot="footer">
+      <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="submitLoading" @click="submitForm">{{ isEdit ? '更新' : '保存' }}</el-button>
       </div>
@@ -148,7 +159,7 @@
           <el-input v-model="editForm.strategy_name" disabled />
         </el-form-item>
         <el-form-item label="交易类型">
-          <el-input v-model="formatTradeType(editForm.trade_type)" disabled />
+          <el-input :value="formatTradeType(editForm.trade_type)" disabled />
         </el-form-item>
         <el-form-item label="连续亏损阈值" prop="freeze_on_loss_count">
           <el-input-number v-model="editForm.freeze_on_loss_count" :min="1" :max="100" controls-position="right" />
@@ -157,7 +168,7 @@
           <el-input-number v-model="editForm.freeze_hours" :min="0.1" :max="168" :step="0.1" controls-position="right" />
         </el-form-item>
       </el-form>
-      <div class="dialog-footer" slot="footer">
+      <div slot="footer" class="dialog-footer">
         <el-button @click="editDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="submitEditLoading" @click="submitEditForm">确认修改</el-button>
       </div>
@@ -306,24 +317,33 @@ export default {
       testLoading: false,
       freezeStatusTimer: null,
       statusCheckLoading: false,
+      selectedRow: null,
+      multipleSelection: [],
     }
   },
   computed: {
     filteredList() {
       return this.list.filter(row => {
-        let match = true;
-        if (this.filterForm.symbol) match = match && row.symbol === this.filterForm.symbol;
-        if (this.filterForm.strategy_name) match = match && row.strategy_name === this.filterForm.strategy_name;
-        if (this.filterForm.trade_type) match = match && row.trade_type === this.filterForm.trade_type;
+        let match = true
+        if (this.filterForm.symbol) match = match && row.symbol === this.filterForm.symbol
+        if (this.filterForm.strategy_name) match = match && row.strategy_name === this.filterForm.strategy_name
+        if (this.filterForm.trade_type) match = match && row.trade_type === this.filterForm.trade_type
         if (this.filterForm.freezeStatus) {
           if (this.filterForm.freezeStatus === 'frozen') {
-            match = match && this.isFrozen(row);
+            match = match && this.isFrozen(row)
           } else if (this.filterForm.freezeStatus === 'normal') {
-            match = match && !this.isFrozen(row);
+            match = match && !this.isFrozen(row)
           }
         }
-        return match;
-      });
+        return match
+      })
+    },
+  },
+  watch: {
+    showLogsDialog(val) {
+      if (val) {
+        this.loadLogs()
+      }
     },
   },
   created() {
@@ -335,6 +355,22 @@ export default {
     this.clearFreezeStatusTimer()
   },
   methods: {
+    handleFilter() {
+      // 触发过滤
+    },
+    handleSelectionChange(val) {
+      this.multipleSelection = val
+      if (val.length > 0) {
+        this.selectedRow = val[0] // 取第一个选中的行
+      } else {
+        this.selectedRow = null
+      }
+    },
+    handleRowClick(row) {
+      this.selectedRow = row
+      // 同时更新选中状态
+      this.$refs.multipleTable.toggleRowSelection(row)
+    },
     async loadOptions() {
       try {
         const response = await getStrategyFreezeOptions()
@@ -424,7 +460,7 @@ export default {
         this.dialogVisible = false
         await Promise.all([
           this.fetchData(),
-          this.loadOptions()
+          this.loadOptions(),
         ])
       } catch (error) {
         if (error !== false) {
@@ -439,6 +475,9 @@ export default {
         await this.$refs.editFormRef.validate()
         this.submitEditLoading = true
         await updateStrategyFreeze(this.editForm.id, {
+          symbol: this.editForm.symbol,
+          strategy_name: this.editForm.strategy_name,
+          trade_type: this.editForm.trade_type,
           freeze_on_loss_count: this.editForm.freeze_on_loss_count,
           freeze_hours: this.editForm.freeze_hours,
         })
@@ -477,7 +516,7 @@ export default {
             confirmButtonText: '确定',
             cancelButtonText: '取消',
             type: 'warning',
-          }
+          },
         )
         await unfreezeStrategy({
           symbol: row.symbol,
@@ -505,7 +544,7 @@ export default {
             confirmButtonText: '确定',
             cancelButtonText: '取消',
             type: 'warning',
-          }
+          },
         )
         await resetStrategyLoss({
           symbol: row.symbol,
@@ -529,7 +568,7 @@ export default {
             confirmButtonText: '确定',
             cancelButtonText: '取消',
             type: 'warning',
-          }
+          },
         )
         await deleteStrategyFreeze(row.id)
         this.$message.success('删除成功')
@@ -638,12 +677,12 @@ export default {
               const resetData = {
                 symbol: row.symbol,
                 strategy_name: row.strategy_name,
-                trade_type: row.trade_type
+                trade_type: row.trade_type,
               }
               resetPromises.push(
                 resetStrategyLoss(resetData).then(() => {
                   row.loss_count = 0
-                }).catch(() => {})
+                }).catch(() => {}),
               )
             }
           } else {
@@ -654,7 +693,9 @@ export default {
       if (resetPromises.length > 0) {
         try {
           await Promise.all(resetPromises)
-        } catch {}
+        } catch (error) {
+          // 忽略重置错误
+        }
       }
       if (hasStatusChanged) {
         await this.fetchData()
@@ -669,13 +710,6 @@ export default {
         this.$message.error('冻结状态检查失败，请重试')
       } finally {
         this.statusCheckLoading = false
-      }
-    }
-  },
-  watch: {
-    showLogsDialog(val) {
-      if (val) {
-        this.loadLogs()
       }
     },
   },
